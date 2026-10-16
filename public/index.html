@@ -17,64 +17,146 @@
 <body>
   <a class="visually-hidden-focusable p-2 bg-white text-dark position-absolute start-0 top-0 z-3" href="#main-content" data-i18n="skipToContent">Skip to content</a>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-4 d-none" id="main-navbar">
-    <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-        <img src="logo.png" alt="IPTV-Manager Logo" width="30" height="30" class="d-inline-block align-text-top">
-        IPTV-Manager
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" data-i18n-label="toggleNavigation">
-        <span class="navbar-toggler-icon"></span>
+  <!-- Header Mobile (visível apenas em telas < 992px) -->
+  <header id="mobile-header" class="d-lg-none bg-white border-bottom shadow-sm px-3 py-2 d-none d-flex justify-content-between align-items-center position-sticky top-0 z-1030">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#main-sidebar" aria-controls="main-sidebar" aria-label="Abrir Menu Lateral">
+        <i class="bi bi-list fs-5"></i>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link active" href="#" data-view="dashboard" id="nav-dashboard" aria-current="page" data-i18n="dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="epg-mapping" id="nav-epg-mapping" data-i18n="epgMapping">EPG Mapping</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="statistics" id="nav-statistics" data-i18n="statistics">Statistics</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="security" id="nav-security" data-i18n="security">Security</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="import-export" id="nav-import-export" data-i18n="importExport">Import/Export</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="smarttv" id="nav-smarttv" data-i18n="smarttv_club"><i class="bi bi-tv me-1"></i>SmartTV Club</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="hosted-playlists" id="nav-hosted-playlists" data-i18n="hosted_playlists"><i class="bi bi-collection-play me-1"></i>Playlists VPS</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="leads" id="nav-leads" data-i18n="leads_cineflow"><i class="bi bi-people-fill me-1"></i>Leads CineFlow</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="automations" id="nav-automations" data-i18n="automations_gold"><i class="bi bi-lightning-charge-fill me-1"></i>Automações & Gold</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-view="ai" id="nav-ai" data-i18n="ai_title">AI assistant</a>
-          </li>
-        </ul>
-        <div class="d-flex align-items-center gap-2">
-          <select id="language-selector" class="form-select form-select-sm bg-white text-dark border-secondary-subtle w-auto" data-i18n-label="selectLanguage">
-            <option value="pt" selected>🇧🇷 Português</option>
-            <option value="en">🇬🇧 English</option>
-            <option value="de">🇩🇪 Deutsch</option>
-            <option value="fr">🇫🇷 Français</option>
-            <option value="el">🇬🇷 Ελληνικά</option>
-          </select>
-          <button class="btn btn-outline-info btn-sm" data-action="action-show-change-password" data-i18n="change_password">Change Password</button>
-          <button class="btn btn-outline-warning btn-sm" data-action="action-show-otp" data-i18n="setup_2fa">2FA</button>
-          <button class="btn btn-outline-secondary btn-sm" data-action="action-logout" data-i18n="logout">Logout</button>
+      <a class="navbar-brand d-flex align-items-center gap-2 mb-0 fw-bold text-dark text-decoration-none" href="#">
+        <img src="logo.png" alt="IPTV-Manager Logo" width="28" height="28">
+        <span>IPTV-Manager</span>
+      </a>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-danger" data-action="action-logout" data-i18n-title="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
+    </div>
+  </header>
+
+  <!-- Sidebar Lateral (Offcanvas em telas pequenas, Fixa à esquerda em desktop) -->
+  <aside id="main-sidebar" class="sidebar offcanvas-lg offcanvas-start bg-white border-end shadow-sm d-none d-flex flex-column" tabindex="-1" aria-labelledby="main-sidebar-label">
+    
+    <!-- Sidebar Header / Brand -->
+    <div class="sidebar-header px-3 py-3 border-bottom d-flex align-items-center justify-content-between">
+      <a class="sidebar-brand d-flex align-items-center gap-2 text-decoration-none" href="#">
+        <img src="logo.png" alt="Logo IPTV-Manager" width="34" height="34" class="rounded shadow-sm">
+        <div>
+          <div class="fw-bold text-dark fs-6 lh-1">IPTV-Manager</div>
+          <small class="text-primary fw-semibold" style="font-size: 0.72rem;">Central Web & Auto-Sync</small>
         </div>
+      </a>
+      <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#main-sidebar" aria-label="Fechar"></button>
+    </div>
+
+    <!-- Sidebar Navigation Links (Scrollable) -->
+    <div class="sidebar-nav flex-grow-1 overflow-auto p-3">
+      
+      <!-- Seção: Sistema & Mapeamento -->
+      <div class="sidebar-section-title text-uppercase text-muted fw-bold mb-2">
+        Sistema & Mapeamento
+      </div>
+      <ul class="nav nav-pills flex-column gap-1 mb-3">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-view="dashboard" id="nav-dashboard" aria-current="page">
+            <i class="bi bi-speedometer2 text-primary"></i>
+            <span data-i18n="dashboard">Painel de Controle</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="epg-mapping" id="nav-epg-mapping">
+            <i class="bi bi-calendar3-range text-info"></i>
+            <span data-i18n="epgMapping">Mapeamento de EPG</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="statistics" id="nav-statistics">
+            <i class="bi bi-bar-chart-line text-success"></i>
+            <span data-i18n="statistics">Estatísticas</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="security" id="nav-security">
+            <i class="bi bi-shield-check text-warning"></i>
+            <span data-i18n="security">Segurança & Logs</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="import-export" id="nav-import-export">
+            <i class="bi bi-arrow-left-right text-secondary"></i>
+            <span data-i18n="importExport">Importar / Exportar</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Seção: Dispositivos & Listas -->
+      <div class="sidebar-section-title text-uppercase text-muted fw-bold mb-2">
+        Dispositivos & Listas
+      </div>
+      <ul class="nav nav-pills flex-column gap-1 mb-3">
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="smarttv" id="nav-smarttv">
+            <i class="bi bi-tv text-primary"></i>
+            <span data-i18n="smarttv_club">SmartTV Club</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="hosted-playlists" id="nav-hosted-playlists">
+            <i class="bi bi-collection-play text-danger"></i>
+            <span data-i18n="hosted_playlists">Playlists VPS</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Seção: Comercial & Automações -->
+      <div class="sidebar-section-title text-uppercase text-muted fw-bold mb-2">
+        Comercial & Automações
+      </div>
+      <ul class="nav nav-pills flex-column gap-1 mb-3">
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="leads" id="nav-leads">
+            <i class="bi bi-people-fill text-success"></i>
+            <span data-i18n="leads_cineflow">Leads CineFlow</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle ms-auto rounded-pill px-2" style="font-size: 0.7rem;">Live</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="automations" id="nav-automations">
+            <i class="bi bi-lightning-charge-fill text-warning"></i>
+            <span data-i18n="automations_gold">Automações & Gold</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-view="ai" id="nav-ai">
+            <i class="bi bi-robot text-info"></i>
+            <span data-i18n="ai_title">Assistente IA</span>
+          </a>
+        </li>
+      </ul>
+
+    </div>
+
+    <!-- Sidebar Footer / Perfil e Ações -->
+    <div class="sidebar-footer p-3 border-top bg-light">
+      <div class="mb-2">
+        <label for="language-selector" class="form-label small text-muted mb-1" style="font-size: 0.72rem; font-weight: 600;">Idioma do Painel</label>
+        <select id="language-selector" class="form-select form-select-sm bg-white text-dark border-secondary-subtle" data-i18n-label="selectLanguage">
+          <option value="pt" selected>🇧🇷 Português</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="el">🇬🇷 Ελληνικά</option>
+        </select>
+      </div>
+
+      <div class="d-flex flex-wrap gap-1">
+        <button class="btn btn-outline-info btn-sm flex-fill py-1 px-2" data-action="action-show-change-password" title="Alterar Senha"><i class="bi bi-key me-1"></i><span data-i18n="change_password">Senha</span></button>
+        <button class="btn btn-outline-warning btn-sm flex-fill py-1 px-2" data-action="action-show-otp" title="Configurar 2FA"><i class="bi bi-shield-lock me-1"></i><span data-i18n="setup_2fa">2FA</span></button>
+        <button class="btn btn-outline-danger btn-sm py-1 px-2" data-action="action-logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </div>
-  </nav>
+
+  </aside>
+
 
   <div class="container-fluid py-4 d-none" id="main-content" tabindex="-1">
     <section id="maintenance-jobs" class="card mb-3" aria-labelledby="maintenance-jobs-title" hidden>

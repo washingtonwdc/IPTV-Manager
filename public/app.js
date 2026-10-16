@@ -3597,6 +3597,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewBtn) {
         e.preventDefault();
         switchView(viewBtn.dataset.view);
+        if (window.innerWidth < 992) {
+            const sidebarEl = document.getElementById('main-sidebar');
+            if (sidebarEl && typeof bootstrap !== 'undefined' && bootstrap.Offcanvas) {
+                const offcanvasInstance = bootstrap.Offcanvas.getInstance(sidebarEl);
+                if (offcanvasInstance) offcanvasInstance.hide();
+            }
+        }
         return;
     }
 
@@ -4885,6 +4892,25 @@ function hideLoginModal() {
   }
 }
 
+function setMainUIVisible(visible) {
+  const sidebar = document.getElementById('main-sidebar');
+  const mobileHeader = document.getElementById('mobile-header');
+  const mainContent = document.getElementById('main-content');
+  const oldNavbar = document.getElementById('main-navbar');
+
+  if (visible) {
+    if (sidebar) sidebar.classList.remove('d-none');
+    if (mobileHeader) mobileHeader.classList.remove('d-none');
+    if (mainContent) mainContent.classList.remove('d-none');
+    if (oldNavbar) oldNavbar.classList.remove('d-none');
+  } else {
+    if (sidebar) sidebar.classList.add('d-none');
+    if (mobileHeader) mobileHeader.classList.add('d-none');
+    if (mainContent) mainContent.classList.add('d-none');
+    if (oldNavbar) oldNavbar.classList.add('d-none');
+  }
+}
+
 async function checkAuthentication() {
   const token = getToken();
   
@@ -4908,8 +4934,7 @@ async function checkAuthentication() {
     applyPermissions();
 
     // Show the main UI if token is valid
-    document.getElementById('main-navbar').classList.remove('d-none');
-    document.getElementById('main-content').classList.remove('d-none');
+    setMainUIVisible(true);
     
     loadUsers();
     loadProviders();
@@ -5051,8 +5076,7 @@ async function handleLogin(event) {
     applyPermissions();
     
     // Show the main UI after successful login
-    document.getElementById('main-navbar').classList.remove('d-none');
-    document.getElementById('main-content').classList.remove('d-none');
+    setMainUIVisible(true);
     
     loadUsers();
     loadProviders();
@@ -5185,8 +5209,7 @@ async function handleLogout() {
   }
 
   // Hide the main UI when logging out
-  document.getElementById('main-navbar').classList.add('d-none');
-  document.getElementById('main-content').classList.add('d-none');
+  setMainUIVisible(false);
   
   showLoginModal();
 }
@@ -5275,8 +5298,7 @@ async function handleChangePassword(event) {
       if (currentUser && currentUser.force_password_change) {
           currentUser.force_password_change = false; // Optimistic update
           applyPermissions();
-          document.getElementById('main-navbar').classList.remove('d-none');
-          document.getElementById('main-content').classList.remove('d-none');
+          setMainUIVisible(true);
           loadUsers();
           loadProviders();
           loadEpgSources();
