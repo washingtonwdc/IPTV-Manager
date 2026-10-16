@@ -86,50 +86,45 @@ export async function registerPublicTrial(req, res) {
         hashedPassword,
         encryptedPlainPassword,
         expiryUnix,
-        cleanCountry,
+        null,
         notes
       );
       newUserId = info.lastInsertRowid;
 
-      // 4. Se existir algum usuário modelo (como o admin ou o primeiro usuário com canais),
+      // 4. Se existir algum usuário modelo (como o usuário mestre washington),
       // clona automaticamente as categorias e canais para este teste
       try {
         const sourceUser = db.prepare(`
-          SELECT user_id, COUNT(*) as cnt 
-          FROM user_channels 
-          GROUP BY user_id 
+          SELECT uc.user_id, COUNT(*) as cnt 
+          FROM user_channels uch
+          JOIN user_categories uc ON uc.id = uch.user_category_id
+          WHERE uc.user_id != ?
+          GROUP BY uc.user_id 
           ORDER BY cnt DESC 
           LIMIT 1
-        `).get();
+        `).get(newUserId);
 
-        if (sourceUser && sourceUser.user_id && sourceUser.user_id !== newUserId) {
+        if (sourceUser && sourceUser.user_id) {
           const sourceCategories = db.prepare('SELECT * FROM user_categories WHERE user_id = ?').all(sourceUser.user_id);
-          const catMap = {}; // oldCatId -> newCatId
 
           const insertCat = db.prepare('INSERT INTO user_categories (user_id, name, sort_order, is_adult, type) VALUES (?, ?, ?, ?, ?)');
-          for (const cat of sourceCategories) {
-            const resCat = insertCat.run(newUserId, cat.name, cat.sort_order, cat.is_adult, cat.type);
-            catMap[cat.id] = resCat.lastInsertRowid;
-          }
-
-          const sourceChannels = db.prepare('SELECT * FROM user_channels WHERE user_id = ?').all(sourceUser.user_id);
-          const insertChan = db.prepare(`
-            INSERT INTO user_channels (user_id, user_category_id, provider_channel_id, sort_order, custom_name, is_hidden, assignment_origin)
-            VALUES (?, ?, ?, ?, ?, ?, 'auto_trial')
+          const insertChannelsBatch = db.prepare(`
+            INSERT INTO user_channels (user_category_id, provider_channel_id, sort_order, custom_name, is_hidden, assignment_origin, granted_by_admin)
+            SELECT ?, uch.provider_channel_id, uch.sort_order, uch.custom_name, uch.is_hidden, 'imported', 1
+            FROM user_channels uch
+            WHERE uch.user_category_id = ?
           `);
 
-          for (const ch of sourceChannels) {
-            const mappedCatId = catMap[ch.user_category_id];
-            if (mappedCatId) {
-              insertChan.run(newUserId, mappedCatId, ch.provider_channel_id, ch.sort_order, ch.custom_name, ch.is_hidden);
-            }
+          for (const cat of sourceCategories) {
+            const resCat = insertCat.run(newUserId, cat.name, cat.sort_order, cat.is_adult, cat.type);
+            const targetCatId = resCat.lastInsertRowid;
+            insertChannelsBatch.run(targetCatId, cat.id);
           }
         }
       } catch (errClone) {
-        // Ignora erro de clonagem se o painel ainda não tiver canais configurados
         console.warn('[Auto-Cadastro] Aviso na associação inicial de canais:', errClone.message);
       }
-    });
+    })();
 
     // 5. Monta URLs e dados Xtream Codes
     const protocol = req.protocol || 'http';

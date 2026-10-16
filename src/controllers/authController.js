@@ -76,7 +76,7 @@ export const login = async (req, res) => {
 
       // Check Password
       let isValid = false;
-      if (user.password && user.password.startsWith('$2b$')) {
+      if (user.password && user.password.startsWith('$2')) {
           isValid = await bcrypt.compare(password, user.password);
       } else {
           // Legacy/Xtream password (encrypted or plaintext)
@@ -258,7 +258,7 @@ export const changePassword = async (req, res) => {
 
     // Verify old password
     let isValidOldPassword = false;
-    if (user.password.startsWith('$2b$')) {
+    if (user.password.startsWith('$2')) {
         isValidOldPassword = await bcrypt.compare(oldPassword, user.password);
     } else {
         const decrypted = decrypt(user.password);

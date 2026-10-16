@@ -79,7 +79,7 @@ export async function authUser(username, password) {
     }
 
     let isValid = false;
-    if (user.password && user.password.startsWith('$2b$')) {
+    if (user.password && user.password.startsWith('$2')) {
         isValid = await bcrypt.compare(p, user.password);
     } else {
         const decrypted = decrypt(user.password);
