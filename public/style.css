@@ -825,3 +825,21 @@ select:focus-visible,
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25) !important;
 }
 
+/* Badges de Status do Painel de Usuários */
+.badge.bg-success-subtle {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+}
+.badge.bg-danger-subtle {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+.badge.bg-primary-subtle {
+  background-color: #e0e7ff !important;
+  color: #4338ca !important;
+}
+.badge.bg-info-subtle {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+

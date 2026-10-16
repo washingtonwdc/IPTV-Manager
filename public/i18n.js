@@ -645,7 +645,7 @@ const translations = {
     'totalUsers': 'Total de Usuários',
     'username': 'Nome de Usuário',
     'password': 'Senha',
-    'addUser': 'Adicionar Usuário',
+    'addUser': 'Adicionar',
     'deleteUserConfirm': 'Deseja realmente excluir o usuário "{name}"?',
     'userCreated': 'Usuário criado com sucesso',
     'hdhrDisabled': 'A emulação HDHomeRun está desativada para este usuário.',

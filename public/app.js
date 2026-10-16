@@ -849,31 +849,112 @@ async function loadUsers() {
   const users = await fetchJSON('/api/users');
   if (requestGeneration !== sessionGeneration || !currentUser || !currentUser.is_admin) return;
   updateStatsCounters('users', users.length);
+  cachedUsersList = users;
+  setupUserFilters();
+  renderUserListFiltered();
+
+  // Populate provider user select
+  updateProviderUserSelect(users);
+  updateExportUserSelect(users);
+  updateCopyUserSelect(users);
+}
+
+let cachedUsersList = [];
+let userFiltersBound = false;
+
+function setupUserFilters() {
+  if (userFiltersBound) return;
+  const searchInput = document.getElementById('user-search-input');
+  const statusFilter = document.getElementById('user-status-filter');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => renderUserListFiltered());
+  }
+  if (statusFilter) {
+    statusFilter.addEventListener('change', () => renderUserListFiltered());
+  }
+  userFiltersBound = true;
+}
+
+function renderUserListFiltered() {
   const list = document.getElementById('user-list');
+  if (!list) return;
+
+  const searchInput = document.getElementById('user-search-input');
+  const statusFilter = document.getElementById('user-status-filter');
+  const filterCountEl = document.getElementById('user-filter-count');
+
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const status = statusFilter ? statusFilter.value : 'all';
+  const now = new Date();
+
+  const filtered = cachedUsersList.filter(u => {
+    const usernameMatch = u.username && u.username.toLowerCase().includes(query);
+    const idMatch = String(u.id).includes(query);
+    const notesMatch = u.notes && u.notes.toLowerCase().includes(query);
+    if (query && !usernameMatch && !idMatch && !notesMatch) return false;
+
+    if (status === 'admin' && !u.is_admin) return false;
+    if (status === 'active') {
+      if (u.expiry_date && new Date(u.expiry_date) < now) return false;
+    }
+    if (status === 'expired') {
+      if (!u.expiry_date || new Date(u.expiry_date) >= now) return false;
+    }
+    return true;
+  });
+
+  if (filterCountEl) {
+    if (query || status !== 'all') {
+      filterCountEl.classList.remove('d-none');
+      filterCountEl.textContent = `Exibindo ${filtered.length} de ${cachedUsersList.length} usuário(s)`;
+    } else {
+      filterCountEl.classList.add('d-none');
+    }
+  }
+
   list.innerHTML = '';
-  
-  users.forEach(u => {
+  if (filtered.length === 0) {
+    list.innerHTML = `<li class="list-group-item text-center text-muted py-3">
+      <i class="bi bi-search me-1" aria-hidden="true"></i> Nenhum usuário encontrado com os filtros atuais.
+    </li>`;
+    return;
+  }
+
+  filtered.forEach(u => {
     const li = document.createElement('li');
-    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-    
+    li.className = 'list-group-item d-flex justify-content-between align-items-center py-2';
+
     if (selectedUserId === u.id) {
-        li.classList.add('active');
+      li.classList.add('active');
     }
 
     const span = document.createElement('span');
-    let displayExpiry = '';
+    let statusBadge = '';
     if (u.expiry_date) {
-        const d = new Date(u.expiry_date);
-        displayExpiry = ` - ${t('expires')}: ${d.toLocaleDateString()}`;
-        if (d < new Date()) {
-            displayExpiry = ` - <span class="text-danger">${t('expired')}</span>`;
-        }
+      const d = new Date(u.expiry_date);
+      if (d < now) {
+        statusBadge = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">${t('expired') || 'Expirado'}</span>`;
+      } else {
+        statusBadge = `<span class="badge bg-success-subtle text-success border border-success-subtle">${t('active') || 'Ativo'}</span>`;
+      }
+    } else {
+      statusBadge = `<span class="badge bg-success-subtle text-success border border-success-subtle">${t('active') || 'Ativo'}</span>`;
     }
-    let displayNotes = '';
-    if (u.notes) {
-        displayNotes = `<br><small class="text-muted" style="font-size: 0.75rem;">${escapeHtml(u.notes)}</small>`;
-    }
-    span.innerHTML = `${escapeHtml(u.username)} (id=${u.id})${displayExpiry}${displayNotes}`;
+
+    let adminBadge = u.is_admin ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Admin</span>' : '';
+    let displayExpiry = u.expiry_date ? `<small class="text-muted d-block" style="font-size: 0.75rem;">${t('expires') || 'Expira'}: ${new Date(u.expiry_date).toLocaleDateString()}</small>` : '';
+    let displayNotes = u.notes ? `<small class="text-muted d-block fst-italic" style="font-size: 0.72rem;">${escapeHtml(u.notes)}</small>` : '';
+
+    span.innerHTML = `
+      <div class="d-flex align-items-center gap-1 flex-wrap">
+        <span class="fw-semibold text-break">${escapeHtml(u.username)}</span>
+        <span class="text-muted small">#${u.id}</span>
+        ${adminBadge}
+        ${statusBadge}
+      </div>
+      ${displayExpiry}
+      ${displayNotes}
+    `;
     span.className = 'flex-grow-1 py-1 text-break';
     span.style.cursor = 'pointer';
     makeAccessible(span, () => {
@@ -881,43 +962,43 @@ async function loadUsers() {
       li.classList.add('active');
       renderUserDetails(u);
     });
-    
+
     const btnGroup = document.createElement('div');
+    btnGroup.className = 'd-flex align-items-center ms-2 flex-shrink-0';
 
     const playBtn = document.createElement('button');
     playBtn.className = 'btn btn-sm btn-outline-success me-1';
-    playBtn.innerHTML = '<i class="bi bi-play-fill" aria-hidden="true"></i>'; // Play icon
+    playBtn.innerHTML = '<i class="bi bi-play-fill" aria-hidden="true"></i>';
     playBtn.title = t('openWebPlayer') || 'Open Web Player';
     playBtn.setAttribute('aria-label', t('openWebPlayer') || 'Open Web Player');
     playBtn.onclick = async () => {
-        // Open window immediately to bypass popup blockers (especially on iOS/Safari)
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-            newWindow.document.write('Loading player...');
-        } else {
-            alert(t('popupBlocked'));
-            return;
-        }
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write('Loading player...');
+      } else {
+        alert(t('popupBlocked'));
+        return;
+      }
 
-        try {
-            playBtn.disabled = true;
-            const res = await fetchJSON('/api/player/token', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: u.id})
-            });
-            newWindow.location.href = `player.html?token=${encodeURIComponent(res.token)}`;
-        } catch(e) {
-            newWindow.close();
-            alert(t('errorPrefix') + ' ' + e.message);
-        } finally {
-            playBtn.disabled = false;
-        }
+      try {
+        playBtn.disabled = true;
+        const res = await fetchJSON('/api/player/token', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id: u.id})
+        });
+        newWindow.location.href = `player.html?token=${encodeURIComponent(res.token)}`;
+      } catch(e) {
+        newWindow.close();
+        alert(t('errorPrefix') + ' ' + e.message);
+      } finally {
+        playBtn.disabled = false;
+      }
     };
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-sm btn-outline-secondary me-1';
-    editBtn.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i>'; // Edit icon
+    editBtn.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i>';
     editBtn.setAttribute('aria-label', t('editUser') || t('edit'));
     editBtn.title = t('editUser') || t('edit');
     editBtn.onclick = () => showEditUserModal(u);
@@ -933,30 +1014,28 @@ async function loadUsers() {
       try {
         await fetchJSON(`/api/users/${u.id}`, {method: 'DELETE'});
 
-        // Clear state if deleted user was selected
         if (selectedUserId === u.id) {
-            selectedUser = null;
-            selectedUserId = null;
-            selectedCategoryId = null;
-            document.getElementById('selected-user-label').innerHTML = `<em data-i18n="noUserSelected">${t('noUserSelected')}</em>`;
+          selectedUser = null;
+          selectedUserId = null;
+          selectedCategoryId = null;
+          document.getElementById('selected-user-label').innerHTML = `<em data-i18n="noUserSelected">${t('noUserSelected')}</em>`;
 
-            const emptyState = document.getElementById('user-details-empty');
-            if (emptyState) emptyState.classList.remove('d-none');
+          const emptyState = document.getElementById('user-details-empty');
+          if (emptyState) emptyState.classList.remove('d-none');
 
-            const contentState = document.getElementById('user-details-content');
-            if (contentState) contentState.classList.add('d-none');
+          const contentState = document.getElementById('user-details-content');
+          if (contentState) contentState.classList.add('d-none');
 
-            document.getElementById('category-list').innerHTML = '';
-            document.getElementById('user-channel-list').innerHTML = '';
+          document.getElementById('category-list').innerHTML = '';
+          document.getElementById('user-channel-list').innerHTML = '';
 
-            // Reset headers
-            const availHeader = document.getElementById('available-channels-header');
-            if (availHeader) availHeader.textContent = t('available', {count: 0});
-            const assignedHeader = document.getElementById('assigned-channels-header');
-            if (assignedHeader) assignedHeader.textContent = t('assigned', {count: 0});
+          const availHeader = document.getElementById('available-channels-header');
+          if (availHeader) availHeader.textContent = t('available', {count: 0});
+          const assignedHeader = document.getElementById('assigned-channels-header');
+          if (assignedHeader) assignedHeader.textContent = t('assigned', {count: 0});
 
-            if (categorySortable) { categorySortable.destroy(); categorySortable = null; }
-            if (channelSortable) { channelSortable.destroy(); channelSortable = null; }
+          if (categorySortable) { categorySortable.destroy(); categorySortable = null; }
+          if (channelSortable) { channelSortable.destroy(); channelSortable = null; }
         }
 
         loadUsers();
@@ -965,21 +1044,16 @@ async function loadUsers() {
         alert(t('errorPrefix') + ' ' + e.message);
       }
     };
-    
+
     btnGroup.appendChild(playBtn);
     if (currentUser && currentUser.is_admin) {
-        btnGroup.appendChild(editBtn);
-        btnGroup.appendChild(delBtn);
+      btnGroup.appendChild(editBtn);
+      btnGroup.appendChild(delBtn);
     }
     li.appendChild(span);
     li.appendChild(btnGroup);
     list.appendChild(li);
   });
-
-  // Populate provider user select
-  updateProviderUserSelect(users);
-  updateExportUserSelect(users);
-  updateCopyUserSelect(users);
 }
 
 function updateExportUserSelect(users) {
@@ -1033,6 +1107,9 @@ function updateProviderUserSelect(users) {
 
 function showEditUserModal(user) {
   const modal = new bootstrap.Modal(document.getElementById('edit-user-modal'));
+  const errEl = document.getElementById('edit-user-error');
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
+
   document.getElementById('edit-user-id').value = user.id;
   document.getElementById('edit-user-username').value = user.username;
   document.getElementById('edit-user-password').value = '';
@@ -1067,6 +1144,9 @@ document.getElementById('edit-user-form').addEventListener('submit', async e => 
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]');
   setLoadingState(btn, true, 'saving');
+
+  const errEl = document.getElementById('edit-user-error');
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
 
   const id = document.getElementById('edit-user-id').value;
   const username = document.getElementById('edit-user-username').value;
@@ -1103,7 +1183,12 @@ document.getElementById('edit-user-form').addEventListener('submit', async e => 
     loadUsers();
     showToast(t('userUpdated'), 'success');
   } catch (e) {
-    alert(t('errorPrefix') + ' ' + (e.message || 'Error'));
+    if (errEl) {
+      errEl.textContent = t('errorPrefix') + ' ' + (e.message || 'Error');
+      errEl.classList.remove('d-none');
+    } else {
+      alert(t('errorPrefix') + ' ' + (e.message || 'Error'));
+    }
   } finally {
     setLoadingState(btn, false);
   }
@@ -1335,15 +1420,25 @@ function prepareEditProvider(p) {
 }
 
 function showAddProviderModal() {
-    const modal = new bootstrap.Modal(document.getElementById('add-provider-modal'));
-    resetProviderForm();
-    modal.show();
+  if (!selectedUserId) {
+    showToast(t('selectUserHint') || 'Selecione um usuário primeiro na lista antes de adicionar um provedor.', 'warning');
+    const userSec = document.getElementById('user-section');
+    if (userSec) {
+      userSec.scrollIntoView({ behavior: 'smooth' });
+    }
+    return;
+  }
+  const modal = new bootstrap.Modal(document.getElementById('add-provider-modal'));
+  resetProviderForm();
+  modal.show();
 }
 
 function resetProviderForm() {
   const form = document.getElementById('provider-form');
   form.reset();
   form.provider_id.value = '';
+  const errEl = document.getElementById('provider-form-error');
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
   document.getElementById('save-provider-btn').textContent = t('addProvider');
   if (selectedUserId && form.user_id) form.user_id.value = selectedUserId;
 
@@ -2406,6 +2501,18 @@ document.getElementById('user-form').addEventListener('submit', async e => {
   const btn = f.querySelector('button[type="submit"]');
   setLoadingState(btn, true, 'saving');
 
+  const errorEl = document.getElementById('user-form-error');
+  if (errorEl) { errorEl.textContent = ''; errorEl.classList.add('d-none'); }
+
+  if (!f.password.value || f.password.value.length < 4) {
+    if (errorEl) {
+      errorEl.textContent = 'A senha deve conter no mínimo 4 caracteres.';
+      errorEl.classList.remove('d-none');
+    }
+    setLoadingState(btn, false);
+    return;
+  }
+
   try {
     const body = {
         username: f.username.value,
@@ -2443,7 +2550,11 @@ document.getElementById('user-form').addEventListener('submit', async e => {
   } catch (e) {
     // Show user-friendly error message
     const errorData = e.response || {};
-    const errorMessage = errorData.message || e.message || 'Unknown error';
+    const errorMessage = errorData.message || e.message || 'Erro ao criar usuário';
+    if (errorEl) {
+      errorEl.textContent = errorMessage;
+      errorEl.classList.remove('d-none');
+    }
     showToast(errorMessage, 'danger');
   } finally {
     setLoadingState(btn, false);
@@ -2455,6 +2566,19 @@ document.getElementById('provider-form').addEventListener('submit', async e => {
   const f = e.target;
   const btn = document.getElementById('save-provider-btn');
   setLoadingState(btn, true, 'saving');
+
+  const errorEl = document.getElementById('provider-form-error');
+  if (errorEl) { errorEl.textContent = ''; errorEl.classList.add('d-none'); }
+
+  const urlVal = (f.url.value || '').trim();
+  if (!/^https?:\/\/.+/i.test(urlVal)) {
+    if (errorEl) {
+      errorEl.textContent = 'A URL do provedor deve iniciar com http:// ou https://';
+      errorEl.classList.remove('d-none');
+    }
+    setLoadingState(btn, false);
+    return;
+  }
 
   const id = f.provider_id.value;
 
@@ -2508,6 +2632,10 @@ document.getElementById('provider-form').addEventListener('submit', async e => {
 
     loadProviders(selectedUserId);
   } catch (e) {
+    if (errorEl) {
+      errorEl.textContent = e.message || 'Erro ao salvar provedor';
+      errorEl.classList.remove('d-none');
+    }
     showToast(e.message, 'danger');
   } finally {
     setLoadingState(btn, false);

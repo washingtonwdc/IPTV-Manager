@@ -224,10 +224,10 @@
             <div class="card-header" data-i18n="userManagement">User Management</div>
             <div class="card-body">
                <form id="user-form" class="row g-2 mb-3 align-items-start">
-                  <div class="col-12 col-md-4 col-lg-3"><input class="form-control form-control-sm" name="username" autocomplete="off" data-i18n-placeholder="username" data-i18n-label="username" placeholder="Username" required /></div>
+                  <div class="col-12 col-md-4 col-lg-3"><input class="form-control form-control-sm" name="username" autocomplete="username" data-i18n-placeholder="username" data-i18n-label="username" placeholder="Username" required /></div>
                   <div class="col-12 col-md-4 col-lg-4">
                      <div class="input-group input-group-sm">
-                        <input class="form-control" name="password" id="new-user-password" type="password" autocomplete="new-password" data-i18n-placeholder="password" data-i18n-label="password" placeholder="Password" required />
+                        <input class="form-control" name="password" id="new-user-password" type="password" autocomplete="new-password" minlength="4" data-i18n-placeholder="password" data-i18n-label="password" placeholder="Password" required />
                         <button class="btn btn-outline-secondary" type="button" data-toggle-password="new-user-password" data-i18n-label="show_password" data-i18n-title="show_password"><i class="bi bi-eye" aria-hidden="true"></i></button>
                         <button class="btn btn-outline-secondary" type="button" data-copy-target="new-user-password" data-i18n-label="copyToClipboardAction" data-i18n-title="copyToClipboardAction"><i class="bi bi-clipboard" aria-hidden="true"></i></button>
                      </div>
@@ -252,7 +252,29 @@
                         <div id="user-allowed-countries-help" class="form-text small mt-1" style="font-size: 0.7rem;" data-i18n="allowedCountriesHelp">Select countries to allow access. Leave empty to allow all. Ctrl+Click to select multiple.</div>
                      </div>
                   </div>
+                  <div class="col-12">
+                     <div id="user-form-error" class="alert alert-danger py-1 px-2 small mt-2 d-none" role="alert" aria-live="polite"></div>
+                  </div>
                </form>
+
+               <!-- Barra de Busca e Filtro de Usuários -->
+               <div class="row g-2 mb-2 px-1 align-items-center">
+                  <div class="col-7 col-sm-8">
+                     <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <input type="text" id="user-search-input" class="form-control border-start-0" placeholder="Buscar por usuário ou ID..." aria-label="Buscar usuário">
+                     </div>
+                  </div>
+                  <div class="col-5 col-sm-4">
+                     <select id="user-status-filter" class="form-select form-select-sm" aria-label="Filtrar usuários por status">
+                        <option value="all">Todos os Status</option>
+                        <option value="active">Apenas Ativos</option>
+                        <option value="expired">Apenas Expirados</option>
+                        <option value="admin">Administradores</option>
+                     </select>
+                  </div>
+               </div>
+               <div id="user-filter-count" class="small text-muted px-2 mb-1 d-none" aria-live="polite"></div>
                <ul id="user-list" class="list-group list-group-flush max-h-400-scroll"></ul>
             </div>
           </div>
@@ -277,7 +299,7 @@
                          <input id="provider-bulk-url-to" class="form-control form-control-sm" type="url" placeholder="http://provider2.com" data-i18n-label="bulkProviderUrlTo" aria-label="New provider URL" required>
                        </div>
                        <div class="col-12 col-lg-2">
-                         <button id="provider-bulk-url-btn" class="btn btn-sm btn-outline-warning w-100" type="submit" data-i18n="bulkProviderUrlRun">Update</button>
+                         <button id="provider-bulk-url-btn" class="btn btn-sm btn-outline-warning w-100 text-nowrap px-1" type="submit" data-i18n="bulkProviderUrlRun">Update</button>
                        </div>
                      </div>
                    </form>
@@ -1110,12 +1132,12 @@
   </div> <!-- End #main-content -->
 
   <!-- Modal: Novo Dispositivo SmartTV -->
-  <div class="modal fade" id="modalAddSmartTVDevice" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="modalAddSmartTVDevice" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modalAddSmartTVDeviceLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title fw-bold"><i class="bi bi-tv text-primary me-2"></i>Cadastrar Equipamento SmartTV Club</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title fw-bold" id="modalAddSmartTVDeviceLabel"><i class="bi bi-tv text-primary me-2"></i>Cadastrar Equipamento SmartTV Club</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
@@ -1137,7 +1159,7 @@
   </div>
 
   <!-- Category Import Modal -->
-  <div class="modal fade" id="importCategoryModal" tabindex="-1" aria-hidden="true" aria-labelledby="importCategoryModal-title">
+  <div class="modal fade" id="importCategoryModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="importCategoryModal-title">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -1192,7 +1214,7 @@
   </div>
 
   <!-- Sync Config Modal -->
-  <div class="modal fade" id="sync-config-modal" tabindex="-1" aria-hidden="true" aria-labelledby="sync-config-modalLabel">
+  <div class="modal fade" id="sync-config-modal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sync-config-modalLabel">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -1261,7 +1283,7 @@
   </div>
 
   <!-- Sync Logs Modal -->
-  <div class="modal fade" id="sync-logs-modal" tabindex="-1" aria-hidden="true" aria-labelledby="sync-logs-modalLabel">
+  <div class="modal fade" id="sync-logs-modal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sync-logs-modalLabel">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
@@ -1273,12 +1295,12 @@
             <table class="table table-sm table-striped">
               <thead>
                 <tr>
-                  <th data-i18n="time">Time</th>
-                  <th data-i18n="status">Status</th>
-                  <th data-i18n="added">Added</th>
-                  <th data-i18n="updated">Updated</th>
-                  <th data-i18n="categories">Categories</th>
-                  <th data-i18n="error">Error</th>
+                  <th scope="col" data-i18n="time">Time</th>
+                  <th scope="col" data-i18n="status">Status</th>
+                  <th scope="col" data-i18n="added">Added</th>
+                  <th scope="col" data-i18n="updated">Updated</th>
+                  <th scope="col" data-i18n="categories">Categories</th>
+                  <th scope="col" data-i18n="error">Error</th>
                 </tr>
               </thead>
               <tbody id="sync-logs-tbody">
@@ -1413,7 +1435,7 @@
   </div>
 
   <!-- Login Modal -->
-  <div class="modal fade" id="login-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="login-modalLabel" aria-hidden="true">
+  <div class="modal fade" id="login-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="login-modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -1439,7 +1461,7 @@
               <label for="login-otp" class="form-label" data-i18n="otp_code">2FA Code</label>
               <input type="text" class="form-control" id="login-otp" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*" data-i18n-placeholder="otpPlaceholder" placeholder="123456" maxlength="6">
             </div>
-            <div id="login-error" class="alert alert-danger d-none"></div>
+            <div id="login-error" class="alert alert-danger py-2 small d-none" role="alert" aria-live="polite"></div>
             <button type="submit" class="btn btn-primary w-100" id="login-btn" data-i18n="login">Login</button>
           </form>
         </div>
@@ -1478,7 +1500,7 @@
   </div>
 
   <!-- Edit User Modal -->
-  <div class="modal fade" id="edit-user-modal" tabindex="-1" aria-labelledby="edit-user-modalLabel" aria-hidden="true">
+  <div class="modal fade" id="edit-user-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="edit-user-modalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -1488,9 +1510,10 @@
         <form id="edit-user-form">
           <div class="modal-body">
             <input type="hidden" id="edit-user-id">
+            <div id="edit-user-error" class="alert alert-danger py-1 px-2 small mb-3 d-none" role="alert" aria-live="polite"></div>
             <div class="mb-3">
               <label class="form-label" data-i18n="username" for="edit-user-username">Username</label>
-              <input type="text" class="form-control" id="edit-user-username" autocomplete="off" required>
+              <input type="text" class="form-control" id="edit-user-username" autocomplete="username" required>
             </div>
             <div class="mb-3">
               <label class="form-label" data-i18n="new_password" for="edit-user-password">New Password</label>
@@ -1586,7 +1609,7 @@
   </div>
 
   <!-- Add Provider Modal -->
-  <div class="modal fade" id="add-provider-modal" tabindex="-1" aria-labelledby="add-provider-modalLabel" aria-hidden="true">
+  <div class="modal fade" id="add-provider-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-provider-modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -1598,6 +1621,7 @@
              <input type="hidden" name="provider_id" value="">
              <!-- Hidden user_id, set by JS -->
              <input type="hidden" name="user_id" value="">
+             <div id="provider-form-error" class="alert alert-danger py-1 px-2 small mb-3 d-none" role="alert" aria-live="polite"></div>
 
              <div class="row mb-3">
                 <div class="col-md-6">
@@ -1606,13 +1630,13 @@
                 </div>
                 <div class="col-md-6">
                    <label class="form-label" data-i18n="url" for="provider-url">URL</label>
-                   <input class="form-control" name="url" id="provider-url" placeholder="http://..." required>
+                   <input class="form-control" name="url" id="provider-url" type="url" pattern="https?://.+" title="URL deve começar com http:// ou https://" placeholder="http://..." required>
                 </div>
              </div>
              <div class="row mb-3">
                 <div class="col-md-6">
                    <label class="form-label" data-i18n="username" for="provider-username">Username</label>
-                   <input class="form-control" name="username" id="provider-username" autocomplete="off" required>
+                   <input class="form-control" name="username" id="provider-username" autocomplete="username" required>
                 </div>
                 <div class="col-md-6">
                    <label class="form-label" data-i18n="password" for="provider-password">Password</label>
