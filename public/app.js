@@ -3812,7 +3812,21 @@ function switchView(viewName) {
     document.getElementById('nav-automations')?.setAttribute('aria-current', 'page');
     initAutomationsView();
   }
+
+  // Sincronizar hash da URL para permitir deep-linking e botao voltar
+  if (window.location.hash !== `#${viewName}`) {
+    history.pushState(null, '', `#${viewName}`);
+  }
 }
+
+window.addEventListener('popstate', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash && document.getElementById(`view-${hash}`)) {
+    switchView(hash);
+  } else {
+    switchView('dashboard');
+  }
+});
 
 async function loadSecurity() {
   try {
@@ -4936,6 +4950,11 @@ async function checkAuthentication() {
     // Show the main UI if token is valid
     setMainUIVisible(true);
     
+    const initialHash = window.location.hash.replace('#', '');
+    if (initialHash && document.getElementById(`view-${initialHash}`)) {
+        switchView(initialHash);
+    }
+
     loadUsers();
     loadProviders();
     loadEpgSources();
@@ -5077,6 +5096,11 @@ async function handleLogin(event) {
     
     // Show the main UI after successful login
     setMainUIVisible(true);
+
+    const postLoginHash = window.location.hash.replace('#', '');
+    if (postLoginHash && document.getElementById(`view-${postLoginHash}`)) {
+        switchView(postLoginHash);
+    }
     
     loadUsers();
     loadProviders();

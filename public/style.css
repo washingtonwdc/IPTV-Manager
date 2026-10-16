@@ -810,3 +810,18 @@ select:focus-visible,
   background: #94a3b8;
 }
 
+/* Acessibilidade WCAG: Foco Visivel para Navegacao com Teclado (Tab) */
+:focus-visible {
+  outline: 2px solid #4f46e5 !important;
+  outline-offset: 2px !important;
+}
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid #4f46e5 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25) !important;
+}
+
