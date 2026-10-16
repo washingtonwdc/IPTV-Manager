@@ -282,6 +282,10 @@ const translations = {
 
     // EPG Mapping
     dashboard: 'Dashboard',
+    smarttv_club: 'SmartTV Club',
+    hosted_playlists: 'Hosted Playlists',
+    leads_cineflow: 'CineFlow Leads',
+    automations_gold: 'Automations & Gold',
     epgMapping: 'EPG Mapping',
     epgMappingTitle: 'EPG Mapping',
     autoMap: 'Auto Map',
@@ -844,6 +848,10 @@ const translations = {
     'changing_password': 'Alterando senha...',
     'missing_fields': 'Por favor, preencha todos os campos',
     'dashboard': 'Painel de Controle',
+    'smarttv_club': 'SmartTV Club',
+    'hosted_playlists': 'Playlists VPS',
+    'leads_cineflow': 'Leads CineFlow',
+    'automations_gold': 'Automações & Gold',
     'epgMapping': 'Mapeamento de EPG',
     'epgMappingTitle': 'Mapeamento de EPG',
     'autoMap': 'Mapeamento Automático',

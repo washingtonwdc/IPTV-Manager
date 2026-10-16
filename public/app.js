@@ -3641,7 +3641,15 @@ document.addEventListener('DOMContentLoaded', () => {
         'action-clear-client-logs': clearClientLogs,
         'action-prune-picons': prunePiconCache,
         'action-disable-otp': disableOtp,
-        'action-verify-otp': verifyAndEnableOtp
+        'action-verify-otp': verifyAndEnableOtp,
+        'action-smarttv-refresh': loadSmartTVDevices,
+        'action-smarttv-trigger-all': triggerAllSmartTVDevices,
+        'action-smarttv-submit-device': submitAddSmartTVDevice,
+        'action-hosted-refresh': loadHostedPlaylists,
+        'action-hosted-decompile': triggerDecompilePlaylists,
+        'action-leads-refresh': loadLeads,
+        'action-gold-generate': triggerGoldGeneration,
+        'action-full-flow-run': triggerFullFlowPipeline
     };
 
     const actionBtn = e.target.closest('[data-action]');
@@ -3653,6 +3661,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Actions with parameters (via data attributes)
+        if (action === 'action-smarttv-trigger-device') {
+            triggerSmartTVDevice(actionBtn.dataset.deviceId);
+            return;
+        }
+        if (action === 'action-smarttv-delete-device') {
+            deleteSmartTVDevice(actionBtn.dataset.deviceId, actionBtn.dataset.deviceName);
+            return;
+        }
+        if (action === 'action-leads-delete') {
+            deleteLead(actionBtn.dataset.timestamp, actionBtn.dataset.email);
+            return;
+        }
+        if (action === 'action-ping-url') {
+            pingTestUrl(actionBtn.dataset.url);
+            return;
+        }
         if (action === 'action-edit-share') {
             try {
                 const data = JSON.parse(actionBtn.dataset.share);
@@ -3707,12 +3731,15 @@ async function updateDashboardCounters() {
 
 function switchView(viewName) {
   // Hide all views
-  document.getElementById('view-dashboard').classList.add('d-none');
-  document.getElementById('view-epg-mapping').classList.add('d-none');
-  document.getElementById('view-statistics').classList.add('d-none');
-  document.getElementById('view-security').classList.add('d-none');
-  document.getElementById('view-import-export').classList.add('d-none');
-  document.getElementById('view-ai').classList.add('d-none');
+  const viewIds = [
+    'view-dashboard', 'view-epg-mapping', 'view-statistics', 'view-security',
+    'view-import-export', 'view-ai', 'view-smarttv', 'view-hosted-playlists',
+    'view-leads', 'view-automations'
+  ];
+  viewIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('d-none');
+  });
 
   // Stop stats interval if running
   if (statsInterval) {
@@ -3728,35 +3755,55 @@ function switchView(viewName) {
 
   // Show selected view
   if (viewName === 'ai') {
-    document.getElementById('view-ai').classList.remove('d-none');
-    document.getElementById('nav-ai').classList.add('active');
-    document.getElementById('nav-ai').setAttribute('aria-current', 'page');
+    document.getElementById('view-ai')?.classList.remove('d-none');
+    document.getElementById('nav-ai')?.classList.add('active');
+    document.getElementById('nav-ai')?.setAttribute('aria-current', 'page');
     window.aiUI?.open();
   } else if (viewName === 'dashboard') {
-    document.getElementById('view-dashboard').classList.remove('d-none');
-    document.getElementById('nav-dashboard').classList.add('active');
-    document.getElementById('nav-dashboard').setAttribute('aria-current', 'page');
+    document.getElementById('view-dashboard')?.classList.remove('d-none');
+    document.getElementById('nav-dashboard')?.classList.add('active');
+    document.getElementById('nav-dashboard')?.setAttribute('aria-current', 'page');
   } else if (viewName === 'epg-mapping') {
-    document.getElementById('view-epg-mapping').classList.remove('d-none');
-    document.getElementById('nav-epg-mapping').classList.add('active');
-    document.getElementById('nav-epg-mapping').setAttribute('aria-current', 'page');
+    document.getElementById('view-epg-mapping')?.classList.remove('d-none');
+    document.getElementById('nav-epg-mapping')?.classList.add('active');
+    document.getElementById('nav-epg-mapping')?.setAttribute('aria-current', 'page');
     renderEpgMappingControls();
   } else if (viewName === 'statistics') {
-    document.getElementById('view-statistics').classList.remove('d-none');
-    document.getElementById('nav-statistics').classList.add('active');
-    document.getElementById('nav-statistics').setAttribute('aria-current', 'page');
+    document.getElementById('view-statistics')?.classList.remove('d-none');
+    document.getElementById('nav-statistics')?.classList.add('active');
+    document.getElementById('nav-statistics')?.setAttribute('aria-current', 'page');
     loadStatistics();
     statsInterval = setInterval(loadStatistics, 5000);
   } else if (viewName === 'security') {
-    document.getElementById('view-security').classList.remove('d-none');
-    document.getElementById('nav-security').classList.add('active');
-    document.getElementById('nav-security').setAttribute('aria-current', 'page');
+    document.getElementById('view-security')?.classList.remove('d-none');
+    document.getElementById('nav-security')?.classList.add('active');
+    document.getElementById('nav-security')?.setAttribute('aria-current', 'page');
     loadSecurity();
   } else if (viewName === 'import-export') {
-    document.getElementById('view-import-export').classList.remove('d-none');
-    document.getElementById('nav-import-export').classList.add('active');
-    document.getElementById('nav-import-export').setAttribute('aria-current', 'page');
+    document.getElementById('view-import-export')?.classList.remove('d-none');
+    document.getElementById('nav-import-export')?.classList.add('active');
+    document.getElementById('nav-import-export')?.setAttribute('aria-current', 'page');
     loadUsers(); // Ensure dropdown is populated
+  } else if (viewName === 'smarttv') {
+    document.getElementById('view-smarttv')?.classList.remove('d-none');
+    document.getElementById('nav-smarttv')?.classList.add('active');
+    document.getElementById('nav-smarttv')?.setAttribute('aria-current', 'page');
+    loadSmartTVDevices();
+  } else if (viewName === 'hosted-playlists') {
+    document.getElementById('view-hosted-playlists')?.classList.remove('d-none');
+    document.getElementById('nav-hosted-playlists')?.classList.add('active');
+    document.getElementById('nav-hosted-playlists')?.setAttribute('aria-current', 'page');
+    loadHostedPlaylists();
+  } else if (viewName === 'leads') {
+    document.getElementById('view-leads')?.classList.remove('d-none');
+    document.getElementById('nav-leads')?.classList.add('active');
+    document.getElementById('nav-leads')?.setAttribute('aria-current', 'page');
+    loadLeads();
+  } else if (viewName === 'automations') {
+    document.getElementById('view-automations')?.classList.remove('d-none');
+    document.getElementById('nav-automations')?.classList.add('active');
+    document.getElementById('nav-automations')?.setAttribute('aria-current', 'page');
+    initAutomationsView();
   }
 }
 
@@ -5674,3 +5721,607 @@ async function deleteUserBackup(backupId, backupName) {
         showToast(t('errorPrefix') + ' ' + e.message, 'danger');
     }
 }
+
+// ============================================================================
+// INTEGRAÇÃO CENTRALIZADA: SMARTTV CLUB, PLAYLISTS VPS, LEADS & AUTOMAÇÕES GOLD
+// ============================================================================
+
+async function ensureSmartTVAuth() {
+  try {
+    const statusRes = await fetch('/api/auth/status');
+    if (statusRes.ok) {
+      const statusData = await statusRes.json();
+      if (!statusData.authenticated && statusData.auth_enabled) {
+        await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: '0808' })
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Silent SmartTV auth check:', e);
+  }
+}
+
+function copyInput(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const val = el.value || el.innerText || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(val).then(() => {
+      showToast('URL copiada para a área de transferência!', 'success');
+    }).catch(() => {
+      el.select();
+      document.execCommand('copy');
+      showToast('URL copiada!', 'success');
+    });
+  } else {
+    el.select();
+    document.execCommand('copy');
+    showToast('URL copiada!', 'success');
+  }
+}
+
+async function pingTestUrl(url) {
+  if (!url) return;
+  showToast('Testando ping da URL...', 'info');
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/playlist/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (data.success && data.status_code === 200) {
+      const msg = `Ping OK! ${data.status_code} (${data.latency_ms}ms) - ${data.channels_detected || 0} canais detectados.`;
+      showToast(msg, 'success');
+    } else {
+      showToast(`Aviso de Ping: HTTP ${data.status_code || 'Erro'} (${data.latency_ms || 0}ms)`, 'warning');
+    }
+  } catch (err) {
+    showToast('Falha ao testar conectividade: ' + err.message, 'danger');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 1. SMARTTV CLUB MANAGEMENT
+// ----------------------------------------------------------------------------
+async function loadSmartTVDevices() {
+  const tbody = document.getElementById('smarttv-devices-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando equipamentos cadastrados...</td></tr>';
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const devices = data.devices || [];
+
+    if (devices.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nenhum equipamento cadastrado. Clique em "Novo Aparelho" para adicionar.</td></tr>';
+      return;
+    }
+
+    let rows = '';
+    devices.forEach((dev, idx) => {
+      const devName = escapeHtml(dev.name || `Equipamento ${idx + 1}`);
+      const devTvId = escapeHtml(dev.tv_id || 'Não informado');
+      const isOnline = dev.enabled !== false;
+      
+      let badgeSync = '<span class="badge bg-secondary">Aguardando Envio</span>';
+      if (dev.status === 'success' || dev.last_sync) {
+        badgeSync = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Sincronizado</span>';
+      } else if (dev.status === 'running') {
+        badgeSync = '<span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat me-1 spinner-border spinner-border-sm"></i>Enviando...</span>';
+      } else if (dev.status === 'error') {
+        badgeSync = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Erro no Envio</span>';
+      }
+
+      let lastSyncFormatted = 'Nunca sincronizado';
+      if (dev.last_sync) {
+        try {
+          const dt = new Date(dev.last_sync);
+          lastSyncFormatted = dt.toLocaleString('pt-BR');
+        } catch {
+          lastSyncFormatted = dev.last_sync;
+        }
+      }
+
+      rows += `
+        <tr>
+          <td class="text-muted fw-bold">${idx + 1}</td>
+          <td>
+            <div class="fw-bold text-dark"><i class="bi bi-display me-2 text-primary"></i>${devName}</div>
+            <small class="text-muted">${isOnline ? 'Slot Ativo' : 'Desativado'}</small>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark font-monospace border px-2 py-1">${devTvId}</span>
+          </td>
+          <td>${badgeSync}</td>
+          <td><small class="text-muted">${lastSyncFormatted}</small></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-primary" data-action="action-smarttv-trigger-device" data-device-id="${dev.id}" onclick="triggerSmartTVDevice(${dev.id})" title="Sincronizar este aparelho">
+                <i class="bi bi-lightning-charge me-1"></i>Sincronizar
+              </button>
+              <button class="btn btn-outline-danger" data-action="action-smarttv-delete-device" data-device-id="${dev.id}" data-device-name="${devName}" onclick="deleteSmartTVDevice(${dev.id}, '${devName}')" title="Excluir equipamento">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = rows;
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Erro ao carregar equipamentos: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+async function triggerAllSmartTVDevices() {
+  const btn = document.getElementById('btn-trigger-all-smarttv');
+  if (btn) btn.disabled = true;
+  showToast('Disparando sincronização em lote para todos os aparelhos...', 'info');
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/trigger-all', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(data.message || 'Sincronização em lote iniciada com sucesso!', 'success');
+      setTimeout(loadSmartTVDevices, 2000);
+    } else {
+      showToast(data.message || data.error || 'Erro ao sincronizar', 'danger');
+    }
+  } catch (err) {
+    showToast('Falha na comunicação: ' + err.message, 'danger');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function triggerSmartTVDevice(id) {
+  showToast(`Iniciando sincronização do equipamento #${id}...`, 'info');
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/trigger-device', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: Number(id) })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Sincronização do equipamento concluída com sucesso!', 'success');
+      loadSmartTVDevices();
+    } else {
+      showToast(data.message || data.error || 'Erro ao sincronizar equipamento', 'danger');
+    }
+  } catch (err) {
+    showToast('Falha na requisição: ' + err.message, 'danger');
+  }
+}
+
+async function submitAddSmartTVDevice() {
+  const nameInput = document.getElementById('device-name-input');
+  const tvidInput = document.getElementById('device-tvid-input');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const tv_id = tvidInput ? tvidInput.value.trim() : '';
+
+  if (!name || !tv_id) {
+    showToast('Por favor, preencha o Nome e o TV ID do aparelho.', 'warning');
+    return;
+  }
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/device/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, tv_id })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Novo equipamento cadastrado com sucesso!', 'success');
+      if (nameInput) nameInput.value = '';
+      if (tvidInput) tvidInput.value = '';
+      const modalEl = document.getElementById('modalAddSmartTVDevice');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+      }
+      loadSmartTVDevices();
+    } else {
+      showToast(data.error || 'Falha ao cadastrar equipamento', 'danger');
+    }
+  } catch (err) {
+    showToast('Erro de conexão: ' + err.message, 'danger');
+  }
+}
+
+async function deleteSmartTVDevice(id, name) {
+  if (!confirm(`Deseja realmente excluir o equipamento "${name}"?`)) return;
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/device/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: Number(id) })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Equipamento removido com sucesso.', 'success');
+      loadSmartTVDevices();
+    } else {
+      showToast(data.error || 'Erro ao remover equipamento', 'danger');
+    }
+  } catch (err) {
+    showToast('Falha: ' + err.message, 'danger');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 2. HOSTED PLAYLISTS (VPS M3U FILES)
+// ----------------------------------------------------------------------------
+async function loadHostedPlaylists() {
+  const container = document.getElementById('hosted-playlists-cards');
+  if (!container) return;
+  container.innerHTML = '<div class="col-12 text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando metadados das playlists...</div>';
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/playlist/hosted/metadata');
+    let meta = { status: 'ok', totais_por_tipo: {} };
+    if (res.ok) {
+      meta = await res.json();
+    }
+
+    const host = window.location.hostname || '163.176.216.39';
+    const baseUrl = `http://${host}:5050`;
+
+    const playlists = [
+      {
+        id: 'canais',
+        title: 'Canais Ao Vivo (Live TV)',
+        filename: 'canais.m3u',
+        icon: 'bi-broadcast-pin text-primary',
+        desc: 'Foco exclusivo em canais de TV ao vivo, esportes, notícias e abertos.',
+        count: meta.totais_por_tipo?.canais || 70966,
+        badge: 'Canais Ao Vivo',
+        badgeClass: 'bg-primary'
+      },
+      {
+        id: 'filmes',
+        title: 'Filmes On Demand (VOD)',
+        filename: 'filmes.m3u',
+        icon: 'bi-film text-danger',
+        desc: 'Catálogo de lançamentos, clássicos e produções de cinema.',
+        count: meta.totais_por_tipo?.filmes || 14200,
+        badge: 'Filmes',
+        badgeClass: 'bg-danger'
+      },
+      {
+        id: 'series',
+        title: 'Séries de TV On Demand',
+        filename: 'series.m3u',
+        icon: 'bi-tv text-info',
+        desc: 'Temporadas completas, animes e seriados organizados.',
+        count: meta.totais_por_tipo?.series || 3850,
+        badge: 'Séries',
+        badgeClass: 'bg-info text-dark'
+      },
+      {
+        id: 'all',
+        title: 'Playlist M3U Completa (Full)',
+        filename: 'all.m3u',
+        icon: 'bi-collection-play-fill text-success',
+        desc: 'Lista consolidada com todos os canais, filmes e séries (~181 MB).',
+        count: meta.total_streams || 89016,
+        badge: 'Completa',
+        badgeClass: 'bg-success'
+      }
+    ];
+
+    let cardsHtml = '';
+    playlists.forEach(pl => {
+      const fileUrl = `${baseUrl}/playlist/${pl.filename}`;
+      const inputId = `input-pl-${pl.id}`;
+      cardsHtml += `
+        <div class="col-md-6">
+          <div class="card h-100 border shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi ${pl.icon} me-2"></i>${pl.title}</h6>
+                <span class="badge ${pl.badgeClass}">${pl.badge}</span>
+              </div>
+              <p class="text-muted small mb-2">${pl.desc}</p>
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-light text-secondary border"><i class="bi bi-stack me-1"></i>${Number(pl.count).toLocaleString('pt-BR')} itens</span>
+                <span class="badge bg-light text-secondary border"><i class="bi bi-file-earmark-code me-1"></i>${pl.filename}</span>
+              </div>
+              <div class="input-group input-group-sm mb-2">
+                <input type="text" class="form-control font-monospace" id="${inputId}" readonly value="${fileUrl}">
+                <button class="btn btn-outline-primary" data-copy-target="${inputId}" onclick="copyInput('${inputId}')" title="Copiar Link"><i class="bi bi-clipboard"></i></button>
+                <button class="btn btn-outline-secondary" data-action="action-ping-url" data-url="${fileUrl}" onclick="pingTestUrl('${fileUrl}')" title="Testar Conectividade"><i class="bi bi-activity"></i></button>
+                <a href="${fileUrl}" target="_blank" class="btn btn-outline-success" title="Baixar Arquivo"><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = cardsHtml;
+  } catch (err) {
+    container.innerHTML = `<div class="col-12 text-center py-4 text-danger">Erro ao carregar listas: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function triggerDecompilePlaylists() {
+  if (!confirm('Deseja iniciar o reprocessamento e descompilação das playlists locais na VPS?')) return;
+  showToast('Iniciando rotina de descompilação na VPS em segundo plano...', 'info');
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/playlist/hosted/decompile', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Descompilação finalizada com sucesso! Playlists atualizadas.', 'success');
+      loadHostedPlaylists();
+    } else {
+      showToast(data.error || 'Aviso durante a descompilação', 'warning');
+    }
+  } catch (err) {
+    showToast('Falha ao acionar descompilação: ' + err.message, 'danger');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 3. LEADS & CADASTROS CINEFLOW ULTRA
+// ----------------------------------------------------------------------------
+async function loadLeads() {
+  const tbody = document.getElementById('leads-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando cadastros recebidos...</td></tr>';
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/leads');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const leads = data.leads || [];
+
+    if (leads.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nenhum cadastro recebido até o momento. Novos testes solicitados em <code>/cadastro</code> aparecerão aqui.</td></tr>';
+      return;
+    }
+
+    let rows = '';
+    leads.forEach((l, idx) => {
+      const nome = escapeHtml(l.name || 'Cliente');
+      const email = escapeHtml(l.email || '');
+      const rawTel = (l.phone || '').replace(/\D/g, '');
+      const displayTel = escapeHtml(l.phone || 'Não informado');
+      const pais = escapeHtml(l.country || 'Brasil');
+      
+      let dataHoraFormatada = l.timestamp || '';
+      try {
+        const dt = new Date(l.timestamp);
+        dataHoraFormatada = dt.toLocaleString('pt-BR');
+      } catch {}
+
+      // Link direto do WhatsApp com mensagem pronta
+      const msgWhats = encodeURIComponent(`Olá ${nome}! Vimos que você solicitou seu teste exclusivo no CineFlow Ultra. Seguem os dados para seu acesso gratuito!`);
+      const linkWhats = rawTel ? `https://wa.me/55${rawTel}?text=${msgWhats}` : '#';
+
+      rows += `
+        <tr>
+          <td><small class="text-muted"><i class="bi bi-clock me-1"></i>${dataHoraFormatada}</small></td>
+          <td><div class="fw-bold text-dark">${nome}</div></td>
+          <td><a href="mailto:${email}" class="text-decoration-none"><i class="bi bi-envelope me-1"></i>${email}</a></td>
+          <td>
+            <span class="font-monospace text-dark">${displayTel}</span>
+          </td>
+          <td><span class="badge bg-light text-secondary border">${pais}</span></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              ${rawTel ? `<a href="${linkWhats}" target="_blank" class="btn btn-outline-success" title="Chamar no WhatsApp"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>` : ''}
+              <button class="btn btn-outline-danger" data-action="action-leads-delete" data-timestamp="${l.timestamp}" data-email="${email}" onclick="deleteLead('${l.timestamp}', '${email}')" title="Excluir Lead">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = rows;
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Erro ao carregar leads: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+async function deleteLead(timestamp, email) {
+  if (!confirm(`Deseja realmente remover o lead "${email}"?`)) return;
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/leads/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timestamp, email })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Lead excluído com sucesso.', 'success');
+      loadLeads();
+    } else {
+      showToast(data.error || 'Erro ao excluir lead', 'danger');
+    }
+  } catch (err) {
+    showToast('Falha na exclusão: ' + err.message, 'danger');
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 4. AUTOMAÇÕES & GERADOR GOLD CARD
+// ----------------------------------------------------------------------------
+async function triggerGoldGeneration() {
+  const btn = document.getElementById('btn-generate-gold');
+  const resCard = document.getElementById('gold-gen-result');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Gerando Teste Gold Oficial...';
+  }
+  if (resCard) resCard.classList.add('d-none');
+  showToast('Iniciando geração no testersbygold.fun via e-mail descartável...', 'info');
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/generator/gold-test', { method: 'POST' });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showToast('Novo Teste Gold gerado com sucesso!', 'success');
+      if (resCard) {
+        resCard.classList.remove('d-none');
+        resCard.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-success mb-0"><i class="bi bi-check-circle-fill me-2"></i>Teste Gerado com Sucesso!</h6>
+            <span class="badge bg-warning text-dark">Validade: 4 horas</span>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label class="small text-muted mb-0">Usuário:</label>
+              <div class="font-monospace fw-bold bg-white p-1 rounded border">${escapeHtml(data.username || '')}</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="small text-muted mb-0">Senha:</label>
+              <div class="font-monospace fw-bold bg-white p-1 rounded border">${escapeHtml(data.password || '')}</div>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="small text-muted mb-1">Playlist M3U Oficial Gerada:</label>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control font-monospace" id="gold-output-url" readonly value="${escapeHtml(data.m3u_url || '')}">
+              <button class="btn btn-outline-primary" data-copy-target="gold-output-url" onclick="copyInput('gold-output-url')"><i class="bi bi-clipboard me-1"></i>Copiar</button>
+              <button class="btn btn-outline-secondary" data-action="action-ping-url" data-url="${escapeHtml(data.m3u_url || '')}" onclick="pingTestUrl('${escapeHtml(data.m3u_url || '')}')"><i class="bi bi-activity me-1"></i>Ping</button>
+            </div>
+          </div>
+          <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Esta nova playlist foi salva automaticamente no sistema.</small>
+        `;
+      }
+    } else {
+      showToast(data.error || 'Falha ao gerar teste Gold', 'danger');
+    }
+  } catch (err) {
+    showToast('Erro ao comunicar com o gerador: ' + err.message, 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-magic me-2"></i>Gerar Novo Teste Gold Imediato';
+    }
+  }
+}
+
+let fullFlowPollInterval = null;
+
+async function triggerFullFlowPipeline() {
+  const btn = document.getElementById('btn-run-full-flow');
+  const card = document.getElementById('full-flow-status-card');
+  const bar = document.getElementById('full-flow-progress-bar');
+  const txt = document.getElementById('full-flow-step-text');
+
+  if (btn) btn.disabled = true;
+  if (card) card.classList.remove('d-none');
+  if (bar) {
+    bar.style.width = '10%';
+    bar.innerText = '10%';
+  }
+  if (txt) txt.innerText = 'Iniciando Pipeline Ponta a Ponta...';
+  showToast('Fluxo Completo Ponta a Ponta acionado!', 'info');
+
+  try {
+    await ensureSmartTVAuth();
+    const res = await fetch('/api/full-flow', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok && !data.running) {
+      throw new Error(data.message || 'Falha ao iniciar fluxo');
+    }
+
+    startFullFlowPolling();
+  } catch (err) {
+    showToast('Erro: ' + err.message, 'danger');
+    if (btn) btn.disabled = false;
+  }
+}
+
+function startFullFlowPolling() {
+  if (fullFlowPollInterval) clearInterval(fullFlowPollInterval);
+
+  fullFlowPollInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/full-flow/status');
+      if (!res.ok) return;
+      const status = await res.json();
+
+      const bar = document.getElementById('full-flow-progress-bar');
+      const txt = document.getElementById('full-flow-step-text');
+      const btn = document.getElementById('btn-run-full-flow');
+
+      const pct = status.progress || 0;
+      if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.innerText = `${pct}%`;
+      }
+      if (txt && status.step) {
+        txt.innerText = status.step;
+      }
+
+      if (!status.running) {
+        clearInterval(fullFlowPollInterval);
+        fullFlowPollInterval = null;
+        if (btn) btn.disabled = false;
+        if (pct >= 100) {
+          showToast('Fluxo Completo executado e validado com sucesso!', 'success');
+        } else if (status.last_result && !status.last_result.success) {
+          showToast('Fluxo finalizado com avisos: ' + (status.last_result.error || 'Verifique o log'), 'warning');
+        }
+        loadSmartTVDevices();
+      }
+    } catch (e) {
+      console.warn('Polling error:', e);
+    }
+  }, 1500);
+}
+
+function initAutomationsView() {
+  fetch('/api/full-flow/status').then(r => r.json()).then(st => {
+    if (st && st.running) {
+      const card = document.getElementById('full-flow-status-card');
+      if (card) card.classList.remove('d-none');
+      startFullFlowPolling();
+    }
+  }).catch(() => {});
+}
+
+// Exportação no escopo global window para chamadas inline HTML
+window.copyInput = copyInput;
+window.pingTestUrl = pingTestUrl;
+window.loadSmartTVDevices = loadSmartTVDevices;
+window.triggerAllSmartTVDevices = triggerAllSmartTVDevices;
+window.triggerSmartTVDevice = triggerSmartTVDevice;
+window.submitAddSmartTVDevice = submitAddSmartTVDevice;
+window.deleteSmartTVDevice = deleteSmartTVDevice;
+window.loadHostedPlaylists = loadHostedPlaylists;
+window.triggerDecompilePlaylists = triggerDecompilePlaylists;
+window.loadLeads = loadLeads;
+window.deleteLead = deleteLead;
+window.triggerGoldGeneration = triggerGoldGeneration;
+window.triggerFullFlowPipeline = triggerFullFlowPipeline;
+window.initAutomationsView = initAutomationsView;
+
