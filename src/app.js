@@ -21,6 +21,7 @@ import proxyRoutes from './routes/proxy.js';
 import shareRoutes from './routes/shares.js';
 import backupRoutes from './routes/backups.js';
 import aiRoutes from './routes/ai.js';
+import registerRoutes from './routes/register.js';
 import * as shareController from './controllers/shareController.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -77,6 +78,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api', authRoutes);
+app.use('/api', registerRoutes);
 app.use('/api', userRoutes);
 app.use('/api', providerRoutes);
 app.use('/api', channelRoutes);
