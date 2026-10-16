@@ -6011,9 +6011,9 @@ async function loadHostedPlaylists() {
         title: 'Canais Ao Vivo (Live TV)',
         filename: 'canais.m3u',
         icon: 'bi-broadcast-pin text-primary',
-        desc: 'Foco exclusivo em canais de TV ao vivo, esportes, notícias e abertos.',
-        count: meta.totais_por_tipo?.canais || 70966,
-        badge: 'Canais Ao Vivo',
+        desc: 'Foco exclusivo em canais de TV ao vivo, esportes, notícias e abertos (alias: ao_vivo.m3u).',
+        count: meta.totais_por_tipo?.canais_ao_vivo || meta.totais_por_tipo?.canais || 2035,
+        badge: 'Ao Vivo',
         badgeClass: 'bg-primary'
       },
       {
@@ -6021,18 +6021,18 @@ async function loadHostedPlaylists() {
         title: 'Filmes On Demand (VOD)',
         filename: 'filmes.m3u',
         icon: 'bi-film text-danger',
-        desc: 'Catálogo de lançamentos, clássicos e produções de cinema.',
-        count: meta.totais_por_tipo?.filmes || 14200,
+        desc: 'Catálogo completo de cinema, lançamentos 2026 e clássicos (sem séries misturadas).',
+        count: meta.totais_por_tipo?.filmes_vod || meta.totais_por_tipo?.filmes || 43816,
         badge: 'Filmes',
         badgeClass: 'bg-danger'
       },
       {
         id: 'series',
-        title: 'Séries de TV On Demand',
+        title: 'Séries & Novelas On Demand',
         filename: 'series.m3u',
         icon: 'bi-tv text-info',
-        desc: 'Temporadas completas, animes e seriados organizados.',
-        count: meta.totais_por_tipo?.series || 3850,
+        desc: 'Temporadas completas, novelas, doramas e produções de streaming organizadas.',
+        count: meta.totais_por_tipo?.series || 270213,
         badge: 'Séries',
         badgeClass: 'bg-info text-dark'
       },
@@ -6041,8 +6041,8 @@ async function loadHostedPlaylists() {
         title: 'Playlist M3U Completa (Full)',
         filename: 'all.m3u',
         icon: 'bi-collection-play-fill text-success',
-        desc: 'Lista consolidada com todos os canais, filmes e séries (~181 MB).',
-        count: meta.total_streams || 89016,
+        desc: 'Lista consolidada com todos os canais ao vivo, filmes e séries (~181 MB).',
+        count: meta.total_streams || 316064,
         badge: 'Completa',
         badgeClass: 'bg-success'
       }
