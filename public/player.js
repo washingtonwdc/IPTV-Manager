@@ -105,6 +105,33 @@
   }
   translatePage();
 
+  // ─── Theme Management (Light / Dark) ───
+  const THEME_KEY = 'player_theme';
+  // O tema claro é padrão conforme solicitado ("tema claro do player")
+  const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+  applyTheme(savedTheme);
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const themeIcon = document.getElementById('theme-icon');
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeIcon) {
+      themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+    if (themeToggle) {
+      themeToggle.setAttribute('title', theme === 'dark' ? (t('themeLight') || 'Mudar para Tema Claro') : (t('themeDark') || 'Mudar para Tema Escuro'));
+    }
+    localStorage.setItem(THEME_KEY, theme);
+  }
+
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', function() {
+      const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      applyTheme(activeTheme === 'light' ? 'dark' : 'light');
+    });
+  }
+
   // ─── Auth Helper ───
   function getAuthParams() {
     if (token) return 'token=' + encodeURIComponent(token);
@@ -670,7 +697,7 @@ function escapeHtml(unsafe) {
     var frag = document.createDocumentFragment();
     filtered.slice(0, 150).forEach(function(s) {
       var a = document.createElement('a');
-      a.className = 'list-group-item list-group-item-action vod-item bg-dark text-light';
+      a.className = 'list-group-item list-group-item-action vod-item';
 
       var div = document.createElement('div');
       div.className = 'd-flex align-items-center';
@@ -679,7 +706,7 @@ function escapeHtml(unsafe) {
         var img = document.createElement('img');
         img.src = getProxiedUrl(s.logo);
         img.alt = s.name || '';
-        img.style.cssText = 'width:40px;height:40px;object-fit:contain;margin-right:10px;border-radius:4px;background:#1a1a24;';
+        img.style.cssText = 'width:40px;height:40px;object-fit:contain;margin-right:10px;border-radius:4px;background:var(--player-channel-img-bg);';
         img.loading = 'lazy';
         img.onerror = function() { img.style.display = 'none'; };
         div.appendChild(img);
@@ -688,18 +715,18 @@ function escapeHtml(unsafe) {
       var info = document.createElement('div');
       info.style.overflow = 'hidden';
       var name = document.createElement('div');
-      name.className = 'fw-bold text-truncate';
+      name.className = 'fw-bold text-truncate vod-title';
       name.textContent = s.name;
       info.appendChild(name);
       if (s.plot) {
         var plot = document.createElement('div');
-        plot.className = 'small text-light opacity-75 text-truncate';
+        plot.className = 'small vod-plot text-truncate';
         plot.textContent = s.plot;
         info.appendChild(plot);
       }
 
       var meta = document.createElement('div');
-      meta.className = 'small text-light opacity-50 mt-1';
+      meta.className = 'small vod-meta mt-1';
       meta.style.fontSize = '0.75rem';
       var metaParts = [];
       if (s.rating) metaParts.push('⭐ ' + s.rating);
@@ -713,7 +740,7 @@ function escapeHtml(unsafe) {
 
       if (s.cast) {
          var cast = document.createElement('div');
-         cast.className = 'small text-light opacity-50 text-truncate';
+         cast.className = 'small vod-meta text-truncate';
          cast.style.fontSize = '0.7rem';
          cast.textContent = t('castLabel') + ': ' + s.cast;
          info.appendChild(cast);
@@ -760,37 +787,38 @@ function escapeHtml(unsafe) {
       listView.appendChild(backBtn);
 
       var header = document.createElement('div');
-      header.className = 'p-3 border-bottom border-secondary d-flex align-items-start text-light';
+      header.className = 'p-3 border-bottom d-flex align-items-start series-header';
 
       if (data.info && data.info.cover) {
         var img = document.createElement('img');
         img.src = getProxiedUrl(data.info.cover);
         img.alt = data.info.name || series.name || '';
-        img.style.cssText = 'width:80px;height:120px;object-fit:cover;margin-right:15px;border-radius:4px;background:#1a1a24;';
+        img.style.cssText = 'width:80px;height:120px;object-fit:cover;margin-right:15px;border-radius:4px;background:var(--player-channel-img-bg);';
         header.appendChild(img);
       } else if (series.logo) {
         var img2 = document.createElement('img');
         img2.src = getProxiedUrl(series.logo);
         img2.alt = series.name || '';
-        img2.style.cssText = 'width:80px;height:120px;object-fit:cover;margin-right:15px;border-radius:4px;background:#1a1a24;';
+        img2.style.cssText = 'width:80px;height:120px;object-fit:cover;margin-right:15px;border-radius:4px;background:var(--player-channel-img-bg);';
         header.appendChild(img2);
       }
 
       var infoDiv = document.createElement('div');
       var title = document.createElement('h5');
+      title.className = 'vod-title';
       title.textContent = data.info && data.info.name ? data.info.name : series.name;
       infoDiv.appendChild(title);
 
       if (data.info && data.info.plot) {
         var plot = document.createElement('p');
-        plot.className = 'small text-light opacity-75 mb-1';
+        plot.className = 'small vod-plot mb-1';
         plot.textContent = data.info.plot;
         infoDiv.appendChild(plot);
       }
 
       if (data.info && data.info.cast) {
         var cast = document.createElement('div');
-        cast.className = 'small text-light opacity-50';
+        cast.className = 'small vod-meta';
         cast.style.fontSize = '0.75rem';
         cast.textContent = t('castLabel') + ': ' + data.info.cast;
         infoDiv.appendChild(cast);
@@ -811,23 +839,23 @@ function escapeHtml(unsafe) {
       // Seasons loop
       for (var seasonKey in data.episodes) {
         var seasonHeader = document.createElement('div');
-        seasonHeader.className = 'bg-secondary text-light p-2 fw-bold mt-2';
+        seasonHeader.className = 'season-header p-2 fw-bold mt-2';
         seasonHeader.textContent = (t('season') || 'Season') + ' ' + seasonKey;
         frag.appendChild(seasonHeader);
 
         var episodes = data.episodes[seasonKey];
         episodes.forEach(function(ep) {
           var a = document.createElement('a');
-          a.className = 'list-group-item list-group-item-action vod-item bg-dark text-light ps-4';
+          a.className = 'list-group-item list-group-item-action vod-item ps-4';
 
           var titleDiv = document.createElement('div');
-          titleDiv.className = 'fw-bold';
+          titleDiv.className = 'fw-bold vod-title';
           titleDiv.textContent = ep.title || ((t('episode') || 'Episode') + ' ' + ep.episode_num);
           a.appendChild(titleDiv);
 
           if (ep.info && ep.info.plot) {
             var plotDiv = document.createElement('div');
-            plotDiv.className = 'small text-light opacity-75';
+            plotDiv.className = 'small vod-plot';
             plotDiv.textContent = ep.info.plot;
             a.appendChild(plotDiv);
           }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <title data-i18n="playerTitle">IPTV Web Player</title>
@@ -32,11 +32,11 @@
 
   <div class="form-check form-switch min-w-fit">
     <input class="form-check-input" type="checkbox" id="transcode-switch" data-i18n-title="transcodeAudio">
-    <label class="form-check-label text-light" for="transcode-switch" data-i18n="transcodeAudio">Fix Audio (Transcode)</label>
+    <label class="form-check-label" for="transcode-switch" data-i18n="transcodeAudio">Fix Audio (Transcode)</label>
   </div>
 
-  <select id="audio-track-select" class="form-select form-select-sm bg-dark text-light border-secondary w-140px d-none" data-i18n-label="audioTrack" aria-label="Audio"></select>
-  <select id="subtitle-track-select" class="form-select form-select-sm bg-dark text-light border-secondary w-140px d-none" data-i18n-label="subtitleTrack" aria-label="Subtitles"></select>
+  <select id="audio-track-select" class="form-select form-select-sm w-140px d-none" data-i18n-label="audioTrack" aria-label="Audio"></select>
+  <select id="subtitle-track-select" class="form-select form-select-sm w-140px d-none" data-i18n-label="subtitleTrack" aria-label="Subtitles"></select>
 
   <ul class="nav nav-pills flex-shrink-0" id="player-tabs" role="tablist">
     <li class="nav-item" role="presentation"><a class="nav-link active" href="#" data-type="live" data-i18n="liveTV" role="tab" aria-selected="true" aria-controls="timeline-view">Live TV</a></li>
@@ -44,13 +44,13 @@
     <li class="nav-item" role="presentation"><a class="nav-link" href="#" data-type="series" data-i18n="series" role="tab" aria-selected="false" aria-controls="list-view">Series</a></li>
   </ul>
 
-  <select id="category-select" class="form-select form-select-sm bg-dark text-light border-secondary w-160px" aria-label="All Categories" data-i18n-label="allCategories">
+  <select id="category-select" class="form-select form-select-sm w-160px" aria-label="All Categories" data-i18n-label="allCategories">
     <option value="" data-i18n="allCategories">All Categories</option>
   </select>
 
   <div class="input-group input-group-sm w-140px">
-    <input type="text" id="search-input" class="form-control bg-dark text-light border-secondary" placeholder="Search..." data-i18n-placeholder="searchPlaceholder" aria-label="Search..." data-i18n-label="searchPlaceholder">
-    <button class="btn btn-outline-secondary d-none border-secondary text-light" type="button" id="search-input-clear" data-i18n-label="clearSearch" data-i18n-title="clearSearch"><span aria-hidden="true">✕</span></button>
+    <input type="text" id="search-input" class="form-control" placeholder="Search..." data-i18n-placeholder="searchPlaceholder" aria-label="Search..." data-i18n-label="searchPlaceholder">
+    <button class="btn btn-outline-secondary d-none border-secondary" type="button" id="search-input-clear" data-i18n-label="clearSearch" data-i18n-title="clearSearch"><span aria-hidden="true">✕</span></button>
   </div>
 
   <div class="epg-nav-buttons d-flex align-items-center gap-1">
@@ -61,7 +61,10 @@
     <button id="epg-next-day" class="btn btn-sm btn-outline-secondary epg-nav-btn" title="Next Day" data-i18n-title="epgNextDay" data-i18n-label="epgNextDay"><span aria-hidden="true">▶▶</span></button>
   </div>
 
-  <div class="ms-auto d-flex align-items-center">
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <button id="theme-toggle" class="btn btn-sm btn-outline-secondary theme-toggle-btn" type="button" title="Alternar Tema Claro/Escuro" aria-label="Alternar Tema">
+      <span id="theme-icon" aria-hidden="true">🌙</span>
+    </button>
     <google-cast-launcher id="cast-button" class="cast-button-style"></google-cast-launcher>
     <div id="clock">00:00</div>
   </div>
