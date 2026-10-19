@@ -105,6 +105,13 @@
             <span data-i18n="hosted_playlists">Playlists VPS</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#webplayer" data-view="webplayer" id="nav-webplayer">
+            <i class="bi bi-play-circle-fill text-primary"></i>
+            <span data-i18n="webPlayer">Web Player Integrado</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto rounded-pill px-2" style="font-size: 0.7rem;">Claro</span>
+          </a>
+        </li>
       </ul>
 
       <!-- Seção: Comercial & Automações -->
@@ -1045,6 +1052,48 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- View: Web Player Integrado (Modo Claro) -->
+    <div id="view-webplayer" class="d-none">
+      <div class="card shadow-sm border-0 mb-3 bg-white mt-4">
+        <div class="card-body p-3">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="card-title mb-0 fw-bold text-dark"><i class="bi bi-play-circle-fill text-primary me-2"></i><span data-i18n="webPlayer">Web Player Integrado</span></h5>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                  <i class="bi bi-sun-fill me-1"></i> Modo Claro Estrito
+                </span>
+              </div>
+              <p class="text-muted small mb-0 mt-1" data-i18n="webPlayerSubtitle">Visualização e reprodução web em Modo Claro para TV ao Vivo, Filmes e Séries</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <div class="d-flex align-items-center gap-1">
+                <label for="webplayer-user-select" class="form-label small text-muted mb-0 fw-semibold" data-i18n="selectUser">Usuário:</label>
+                <select id="webplayer-user-select" class="form-select form-select-sm" style="min-width: 170px; max-width: 240px;">
+                  <option value="">Carregando usuários...</option>
+                </select>
+              </div>
+              <button id="webplayer-reload-btn" class="btn btn-sm btn-outline-secondary" type="button" title="Recarregar Player" data-i18n-title="reloadPlayer">
+                <i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="reloadPlayer">Recarregar</span>
+              </button>
+              <button id="webplayer-external-btn" class="btn btn-sm btn-primary" type="button" title="Abrir em Nova Aba" data-i18n-title="openInNewTab">
+                <i class="bi bi-box-arrow-up-right me-1"></i><span data-i18n="openInNewTab">Abrir em Nova Aba</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0 bg-white overflow-hidden mb-4" style="border-radius: 12px; min-height: 680px;">
+        <div id="webplayer-frame-loading" class="d-flex flex-column align-items-center justify-content-center p-5 text-center" style="min-height: 450px;">
+          <div class="spinner-border text-primary mb-3" role="status"></div>
+          <h5 class="fw-bold text-dark">Inicializando Web Player em Modo Claro...</h5>
+          <p class="text-muted small mb-0">Autenticando sessão segura e carregando canais...</p>
+        </div>
+        <iframe id="integrated-player-frame" src="about:blank" class="w-100 border-0 d-none" style="height: calc(100vh - 210px); min-height: 650px;" allow="fullscreen; autoplay; encrypted-media"></iframe>
       </div>
     </div>
 

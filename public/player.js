@@ -1,6 +1,10 @@
 (function() {
   'use strict';
 
+  // ─── Strict Light Theme Enforcement ───
+  document.documentElement.setAttribute('data-theme', 'light');
+  try { localStorage.setItem('player_theme', 'light'); } catch (e) {}
+
   // ─── Credentials ───
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
@@ -8,7 +12,7 @@
   const password = urlParams.get('password');
 
   if (!token && (!username || !password)) {
-    document.body.innerHTML = '<div class="alert alert-danger m-4">' + t('missingCredentials') + '</div>';
+    document.body.innerHTML = '<div class="d-flex align-items-center justify-content-center vh-100 bg-body"><div class="alert alert-warning border text-center p-4 shadow-sm" style="max-width: 480px; border-radius: 12px;"><h5 class="fw-bold mb-2">IPTV Web Player</h5><p class="mb-0 text-muted">' + (t('missingCredentials') || 'Credenciais ausentes ou token inválido. Acesse através do Painel de Controle.') + '</p></div></div>';
     throw new Error('Missing credentials');
   }
 
@@ -105,31 +109,13 @@
   }
   translatePage();
 
-  // ─── Theme Management (Light / Dark) ───
+  // ─── Theme Management (Strict Light Mode) ───
   const THEME_KEY = 'player_theme';
-  // O tema claro é padrão conforme solicitado ("tema claro do player")
-  const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
-  applyTheme(savedTheme);
+  applyTheme('light');
 
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    const themeIcon = document.getElementById('theme-icon');
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeIcon) {
-      themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
-    if (themeToggle) {
-      themeToggle.setAttribute('title', theme === 'dark' ? (t('themeLight') || 'Mudar para Tema Claro') : (t('themeDark') || 'Mudar para Tema Escuro'));
-    }
-    localStorage.setItem(THEME_KEY, theme);
-  }
-
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', function() {
-      const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      applyTheme(activeTheme === 'light' ? 'dark' : 'light');
-    });
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(THEME_KEY, 'light'); } catch (e) {}
   }
 
   // ─── Auth Helper ───
@@ -1358,11 +1344,15 @@ function escapeHtml(unsafe) {
     retryCount = 0;
     isRetrying = false;
 
-    // Update now-playing
+    // Update now-playing and activate playing state (hides idle placeholder)
     nowPlayingChannel.textContent = stream.name;
     updateNowPlayingInfo();
-    document.getElementById('player-container').classList.add('show-info');
-    setTimeout(function() { document.getElementById('player-container').classList.remove('show-info'); }, 3000);
+    const container = document.getElementById('player-container');
+    if (container) {
+      container.classList.add('is-playing');
+      container.classList.add('show-info');
+      setTimeout(function() { container.classList.remove('show-info'); }, 3000);
+    }
     hideMpdInfo();
 
     if (castSession) {

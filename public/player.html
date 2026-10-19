@@ -2,18 +2,33 @@
 <html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8">
+  <script>
+    document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem('player_theme', 'light'); } catch (e) {}
+  </script>
   <title data-i18n="playerTitle">IPTV Web Player</title>
   <link rel="icon" type="image/png" href="logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <link href="vendor/bootstrap.min.css" rel="stylesheet">
-  <link href="player.css" rel="stylesheet">
+  <link href="player.css?v=light_strict_20261019" rel="stylesheet">
 </head>
 <body>
 
 <!-- Video Player -->
 <div id="player-container">
+  <div id="player-idle-placeholder" class="player-idle-placeholder">
+    <div class="idle-card">
+      <div class="idle-icon-wrap">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </div>
+      <h4 class="idle-title" data-i18n="playerReadyTitle">IPTV Web Player</h4>
+      <p class="idle-subtitle" data-i18n="playerReadySubtitle">Modo Claro Ativo &bull; Selecione um canal ou conteúdo abaixo para reproduzir</p>
+    </div>
+  </div>
   <video id="video" controls autoplay playsinline webkit-playsinline aria-label="Video Player" data-i18n-label="videoPlayer"></video>
   <div id="now-playing-bar">
     <div id="now-playing-channel"></div>
@@ -62,9 +77,6 @@
   </div>
 
   <div class="ms-auto d-flex align-items-center gap-2">
-    <button id="theme-toggle" class="btn btn-sm btn-outline-secondary theme-toggle-btn" type="button" title="Alternar Tema Claro/Escuro" aria-label="Alternar Tema">
-      <span id="theme-icon" aria-hidden="true">🌙</span>
-    </button>
     <google-cast-launcher id="cast-button" class="cast-button-style"></google-cast-launcher>
     <div id="clock">00:00</div>
   </div>
@@ -102,7 +114,7 @@
 <script src="vendor/dash.all.min.js"></script>
 <script src="i18n.js"></script>
 <script src="player_mpd_info.js"></script>
-<script src="player.js"></script>
+<script src="player.js?v=light_strict_20261019"></script>
 <script src="vendor/cast/cast_sender.js?loadCastFramework=1"></script>
 </body>
 </html>

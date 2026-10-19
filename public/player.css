@@ -106,103 +106,106 @@
   --player-cast-connected: #4f46e5;
 }
 
+/*
+  Modo Claro Estrito Obrigatório:
+  Quaisquer tentativas de carregar modo escuro são neutralizadas.
+*/
 [data-theme="dark"] {
-  /* Paleta Escura Clássica */
-  --player-bg-body: #0a0a0f;
-  --player-bg-surface: #0d0d14;
-  --player-bg-subtle: #16161f;
-  --player-border: #1e1e2a;
-  --player-border-hover: #2a2a3a;
-  --player-border-focus: #3b82f6;
+  --player-bg-body: #f8fafc;
+  --player-bg-surface: #ffffff;
+  --player-bg-subtle: #f1f5f9;
+  --player-border: #e2e8f0;
+  --player-border-hover: #cbd5e1;
+  --player-border-focus: #4f46e5;
 
-  --player-text-main: #e0e0e0;
-  --player-text-secondary: #cbd5e1;
-  --player-text-muted: #94a3b8;
-  --player-text-faint: #64748b;
+  --player-text-main: #0f172a;
+  --player-text-secondary: #334155;
+  --player-text-muted: #64748b;
+  --player-text-faint: #94a3b8;
 
-  --player-primary: #2563eb;
-  --player-primary-hover: #1d4ed8;
-  --player-primary-light: #1e3a6e;
-  --player-primary-text: #ffffff;
+  --player-primary: #4f46e5;
+  --player-primary-hover: #4338ca;
+  --player-primary-light: #e0e7ff;
+  --player-primary-text: #3730a3;
 
-  --player-controls-bg: #111118;
-  --player-controls-border: #222222;
-  --player-input-bg: #212529;
-  --player-input-border: #495057;
-  --player-input-text: #f8f9fa;
+  --player-controls-bg: #ffffff;
+  --player-controls-border: #e2e8f0;
+  --player-input-bg: #ffffff;
+  --player-input-border: #cbd5e1;
+  --player-input-text: #0f172a;
 
-  --player-timeline-bg: #12121a;
-  --player-time-header-bg: #16161f;
-  --player-time-marker-border: #2a2a3a;
-  --player-time-marker-text: #666666;
+  --player-timeline-bg: #f8fafc;
+  --player-time-header-bg: #f1f5f9;
+  --player-time-marker-border: #e2e8f0;
+  --player-time-marker-text: #64748b;
 
-  --player-channel-bg: #0d0d14;
-  --player-channel-hover: #1a1a28;
-  --player-channel-active: #1e3a6e;
-  --player-channel-active-text: #ffffff;
-  --player-channel-border: #1a1a24;
-  --player-channel-name: #cccccc;
-  --player-channel-epg-now: #666666;
-  --player-channel-img-bg: #1a1a24;
+  --player-channel-bg: #ffffff;
+  --player-channel-hover: #f1f5f9;
+  --player-channel-active: #e0e7ff;
+  --player-channel-active-text: #4338ca;
+  --player-channel-border: #e2e8f0;
+  --player-channel-name: #1e293b;
+  --player-channel-epg-now: #64748b;
+  --player-channel-img-bg: #f1f5f9;
 
-  --player-epg-row-bg: #12121a;
-  --player-epg-row-border: #1a1a24;
+  --player-epg-row-bg: #f8fafc;
+  --player-epg-row-border: #e2e8f0;
 
-  --player-program-bg: #1e1e2e;
-  --player-program-border: #2a2a3a;
-  --player-program-text: #999999;
-  --player-program-time: #666666;
-  --player-program-hover-bg: #282840;
-  --player-program-hover-border: #444444;
-  --player-program-hover-text: #dddddd;
+  --player-program-bg: #ffffff;
+  --player-program-border: #cbd5e1;
+  --player-program-text: #334155;
+  --player-program-time: #64748b;
+  --player-program-hover-bg: #f8fafc;
+  --player-program-hover-border: #94a3b8;
+  --player-program-hover-text: #0f172a;
 
-  --player-program-current-bg: #1e3a6e;
-  --player-program-current-border: #3b82f6;
-  --player-program-current-text: #e0e8ff;
-  --player-program-current-time: #8ab4f8;
+  --player-program-current-bg: #e0e7ff;
+  --player-program-current-border: #6366f1;
+  --player-program-current-text: #312e81;
+  --player-program-current-time: #4338ca;
 
-  --player-program-catchup-bg: #1a2e1a;
-  --player-program-catchup-border: #2d5a2d;
-  --player-program-catchup-text: #8bc98b;
-  --player-program-catchup-time: #5a9a5a;
+  --player-program-catchup-bg: #ecfdf5;
+  --player-program-catchup-border: #6ee7b7;
+  --player-program-catchup-text: #065f46;
+  --player-program-catchup-time: #047857;
 
-  --player-program-past-bg: #151518;
-  --player-program-past-border: #1e1e26;
-  --player-program-past-text: #555555;
+  --player-program-past-bg: #f1f5f9;
+  --player-program-past-border: #e2e8f0;
+  --player-program-past-text: #94a3b8;
 
-  --player-list-view-bg: #0a0a0f;
-  --player-vod-item-bg: #111118;
-  --player-vod-item-border: #1e1e2a;
-  --player-vod-item-hover: #1a1a28;
-  --player-vod-item-active: #1e3a6e;
-  --player-vod-item-active-text: #ffffff;
-  --player-vod-title: #ffffff;
-  --player-vod-plot: #cbd5e1;
-  --player-vod-meta: #94a3b8;
+  --player-list-view-bg: #f8fafc;
+  --player-vod-item-bg: #ffffff;
+  --player-vod-item-border: #e2e8f0;
+  --player-vod-item-hover: #f1f5f9;
+  --player-vod-item-active: #e0e7ff;
+  --player-vod-item-active-text: #4338ca;
+  --player-vod-title: #0f172a;
+  --player-vod-plot: #475569;
+  --player-vod-meta: #64748b;
 
-  --player-tooltip-bg: #1e1e2e;
-  --player-tooltip-border: #3b82f6;
-  --player-tooltip-title: #ffffff;
-  --player-tooltip-time: #8ab4f8;
-  --player-tooltip-desc: #999999;
-  --player-tooltip-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --player-tooltip-bg: #ffffff;
+  --player-tooltip-border: #cbd5e1;
+  --player-tooltip-title: #0f172a;
+  --player-tooltip-time: #4f46e5;
+  --player-tooltip-desc: #475569;
+  --player-tooltip-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 
-  --player-mpd-bg: rgba(9, 13, 23, 0.88);
-  --player-mpd-border: rgba(148, 163, 184, 0.32);
-  --player-mpd-text: #e5e7eb;
-  --player-mpd-label: #94a3b8;
-  --player-mpd-value: #f8fafc;
-  --player-mpd-toggle-bg: rgba(15, 23, 42, 0.78);
-  --player-mpd-toggle-border: rgba(148, 163, 184, 0.45);
-  --player-mpd-toggle-text: #e5e7eb;
-  --player-mpd-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --player-mpd-bg: rgba(255, 255, 255, 0.96);
+  --player-mpd-border: #cbd5e1;
+  --player-mpd-text: #0f172a;
+  --player-mpd-label: #64748b;
+  --player-mpd-value: #0f172a;
+  --player-mpd-toggle-bg: #f8fafc;
+  --player-mpd-toggle-border: #cbd5e1;
+  --player-mpd-toggle-text: #334155;
+  --player-mpd-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 
-  --player-scrollbar-thumb: #333333;
+  --player-scrollbar-thumb: #cbd5e1;
   --player-scrollbar-track: transparent;
 
-  --player-clock-color: #666666;
-  --player-cast-disconnected: #999999;
-  --player-cast-connected: #2563eb;
+  --player-clock-color: #64748b;
+  --player-cast-disconnected: #64748b;
+  --player-cast-connected: #4f46e5;
 }
 
 body {
@@ -218,19 +221,87 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* ── Video Container ── */
+/* ── Video Container (Strict Light Mode Canvas) ── */
 #player-container {
-  background: #000;
+  background: #f8fafc;
   width: 100%;
   height: 55vh;
   position: relative;
   flex-shrink: 0;
-  min-height: 200px;
+  min-height: 220px;
+  border-bottom: 1px solid var(--player-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+}
+#player-container.is-playing {
+  background: #000;
 }
 video {
   width: 100%;
   height: 100%;
+  background: transparent;
+}
+#player-container.is-playing video {
   background: #000;
+}
+
+/* ── Idle Placeholder (Light Sleek SaaS) ── */
+.player-idle-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+  z-index: 4;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+  pointer-events: none;
+}
+#player-container.is-playing .player-idle-placeholder {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.idle-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.25rem 2.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+  max-width: 480px;
+  margin: 1rem;
+}
+.idle-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
+}
+.idle-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.01em;
+}
+.idle-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
 }
 #now-playing-bar {
   position: absolute;

@@ -3869,7 +3869,7 @@ function switchView(viewName) {
   const viewIds = [
     'view-dashboard', 'view-epg-mapping', 'view-statistics', 'view-security',
     'view-import-export', 'view-ai', 'view-smarttv', 'view-hosted-playlists',
-    'view-leads', 'view-automations'
+    'view-webplayer', 'view-leads', 'view-automations'
   ];
   viewIds.forEach(id => {
     const el = document.getElementById(id);
@@ -3929,6 +3929,11 @@ function switchView(viewName) {
     document.getElementById('nav-hosted-playlists')?.classList.add('active');
     document.getElementById('nav-hosted-playlists')?.setAttribute('aria-current', 'page');
     loadHostedPlaylists();
+  } else if (viewName === 'webplayer') {
+    document.getElementById('view-webplayer')?.classList.remove('d-none');
+    document.getElementById('nav-webplayer')?.classList.add('active');
+    document.getElementById('nav-webplayer')?.setAttribute('aria-current', 'page');
+    loadIntegratedWebPlayer();
   } else if (viewName === 'leads') {
     document.getElementById('view-leads')?.classList.remove('d-none');
     document.getElementById('nav-leads')?.classList.add('active');
@@ -3944,6 +3949,143 @@ function switchView(viewName) {
   // Sincronizar hash da URL para permitir deep-linking e botao voltar
   if (window.location.hash !== `#${viewName}`) {
     history.pushState(null, '', `#${viewName}`);
+  }
+}
+
+let webplayerInitialized = false;
+let currentWebPlayerUrl = '';
+
+async function loadIntegratedWebPlayer(forceReload = false) {
+  const iframe = document.getElementById('integrated-player-frame');
+  const loading = document.getElementById('webplayer-frame-loading');
+  const userSelect = document.getElementById('webplayer-user-select');
+  const reloadBtn = document.getElementById('webplayer-reload-btn');
+  const externalBtn = document.getElementById('webplayer-external-btn');
+
+  if (!iframe) return;
+
+  // Populate users dropdown if needed
+  try {
+    let users = cachedUsersList;
+    if (!users || users.length === 0) {
+      if (currentUser?.is_admin) {
+        users = await fetchJSON('/api/users');
+        cachedUsersList = users;
+      } else if (currentUser) {
+        users = [currentUser];
+      }
+    }
+
+    if (userSelect && users && users.length > 0) {
+      const prevVal = userSelect.value;
+      userSelect.innerHTML = users.map(u => 
+        `<option value="${u.id}">${escapeHtml(u.username || ('User #' + u.id))}${u.is_admin ? ' (Admin)' : ''}</option>`
+      ).join('');
+      if (prevVal && users.some(u => String(u.id) === String(prevVal))) {
+        userSelect.value = prevVal;
+      } else if (selectedUserId && users.some(u => String(u.id) === String(selectedUserId))) {
+        userSelect.value = selectedUserId;
+      } else if (currentUser?.id && users.some(u => String(u.id) === String(currentUser.id))) {
+        userSelect.value = currentUser.id;
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao carregar lista de usuários para Web Player:', err);
+  }
+
+  // Bind controls once
+  if (!webplayerInitialized) {
+    if (userSelect) {
+      userSelect.addEventListener('change', () => loadIntegratedWebPlayer(true));
+    }
+    if (reloadBtn) {
+      reloadBtn.addEventListener('click', () => {
+        if (currentWebPlayerUrl) {
+          if (loading) loading.classList.remove('d-none');
+          if (iframe) iframe.classList.add('d-none');
+          iframe.src = currentWebPlayerUrl + (currentWebPlayerUrl.includes('?') ? '&' : '?') + '_r=' + Date.now();
+        } else {
+          loadIntegratedWebPlayer(true);
+        }
+      });
+    }
+    if (externalBtn) {
+      externalBtn.addEventListener('click', () => {
+        if (currentWebPlayerUrl) {
+          window.open(currentWebPlayerUrl, '_blank');
+        }
+      });
+    }
+
+    iframe.addEventListener('load', () => {
+      if (iframe.src && iframe.src !== 'about:blank') {
+        if (loading) loading.classList.add('d-none');
+        iframe.classList.remove('d-none');
+      }
+    });
+
+    webplayerInitialized = true;
+  }
+
+  // If already loaded and not force reloading, just ensure visible
+  if (currentWebPlayerUrl && !forceReload) {
+    if (loading) loading.classList.add('d-none');
+    iframe.classList.remove('d-none');
+    return;
+  }
+
+  // Obtain target user ID
+  let targetUserId = userSelect ? userSelect.value : null;
+  if (!targetUserId && cachedUsersList && cachedUsersList.length > 0) {
+    targetUserId = cachedUsersList[0].id;
+  }
+  if (!targetUserId && currentUser) {
+    targetUserId = currentUser.id;
+  }
+
+  if (!targetUserId) {
+    if (loading) {
+      loading.innerHTML = '<div class="alert alert-warning m-4">Nenhum usuário selecionado ou disponível para gerar o player.</div>';
+    }
+    return;
+  }
+
+  if (loading) {
+    loading.classList.remove('d-none');
+    loading.innerHTML = `
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <h5 class="fw-bold text-dark">Inicializando Web Player em Modo Claro...</h5>
+      <p class="text-muted small mb-0">Autenticando sessão segura e carregando canais...</p>
+    `;
+  }
+  iframe.classList.add('d-none');
+
+  try {
+    const res = await fetchJSON('/api/player/token', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ user_id: targetUserId })
+    });
+
+    if (res && res.token) {
+      currentWebPlayerUrl = `player.html?token=${encodeURIComponent(res.token)}`;
+      iframe.src = currentWebPlayerUrl;
+    } else {
+      throw new Error(res?.error || 'Token de reprodução não retornado pelo servidor');
+    }
+  } catch (err) {
+    console.error('Falha ao autenticar Web Player Integrado:', err);
+    if (loading) {
+      loading.innerHTML = `
+        <div class="alert alert-danger m-4 text-center">
+          <i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2 text-danger"></i>
+          <strong>Falha ao carregar Web Player:</strong> ${escapeHtml(err.message)}
+          <div class="mt-3">
+            <button class="btn btn-sm btn-outline-primary" onclick="loadIntegratedWebPlayer(true)">Tentar Novamente</button>
+          </div>
+        </div>
+      `;
+    }
   }
 }
 
