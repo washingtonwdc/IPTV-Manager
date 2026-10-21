@@ -122,3 +122,12 @@ test('browser player renders channel lists before background EPG load completes'
   expect(epgFunctionIndex).toBeGreaterThan(renderIndex);
   expect(playerJs).toContain("if (loaded && currentType === 'live')");
 });
+
+
+test('extractBaseChannelName and findH264Alternative contracts exist in player', () => {
+  const playerJs = fs.readFileSync(path.join(process.cwd(), 'public/player.js'), 'utf8');
+  expect(playerJs).toContain('function extractBaseChannelName(name)');
+  expect(playerJs).toContain('function findH264Alternative(stream, channels)');
+  expect(playerJs).toContain('function browserSupportsHEVC()');
+  expect(playerJs).toContain('window.findH264Alternative = findH264Alternative;');
+});

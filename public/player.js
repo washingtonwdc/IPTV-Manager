@@ -196,6 +196,9 @@ function escapeHtml(unsafe) {
     document.getElementById('player-container').classList.add('show-info'); // Show info bar
 
     var url = stream.url;
+    try {
+      url = new URL(url, window.location.href).href;
+    } catch (e) {}
     if (token && !url.includes('token=')) {
       url += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
     }
@@ -1428,6 +1431,9 @@ function escapeHtml(unsafe) {
     }
 
     var url = stream.url;
+    try {
+      url = new URL(url, window.location.href).href;
+    } catch (e) {}
     if (token && !url.includes('token=')) {
       url += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
     }
@@ -1442,6 +1448,26 @@ function escapeHtml(unsafe) {
       video.dataset.drm = JSON.stringify(stream.drm);
     } else {
       delete video.dataset.drm;
+    }
+
+    // ─── Proactive HEVC/H.265 Fallback for Browsers ───
+    var isH265Explicit = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(stream.name || '');
+    if (isH265Explicit && !browserSupportsHEVC()) {
+      attemptedChannelUrls.add(stream.url || stream.name);
+      var altDirect = findH264Alternative(stream);
+      if (altDirect) {
+        console.log('[Auto-Fallback] Canal H.265 detectado no navegador. Alternando diretamente para versão H.264 compatível:', altDirect.name);
+        showToast(
+          'O canal "' + stream.name + '" utiliza H.265/HEVC (exclusivo para Smart TVs). Alternando automaticamente para "' + altDirect.name + '" (H.264 compatível)...',
+          'warning',
+          6000
+        );
+        setTimeout(function() {
+          highlightChannelInUI(altDirect);
+          playStream(altDirect);
+        }, 300);
+        return;
+      }
     }
 
     // ─── Playback Strategy ───
@@ -1594,6 +1620,9 @@ function escapeHtml(unsafe) {
     isRetrying = false;
     retryCount = 0;
     setPlayerStatus('MPEG-TS', 'warning');
+    try {
+      url = new URL(url, window.location.href).href;
+    } catch (e) {}
     console.log('mpegts.js: ' + url);
 
     if (typeof mpegts === 'undefined' || !mpegts.isSupported()) {
@@ -1641,10 +1670,23 @@ function escapeHtml(unsafe) {
     flvPlayer.on(mpegts.Events.ERROR, function(errorType, errorDetail, errorInfo) {
       console.warn('mpegts error:', errorType, errorDetail, errorInfo);
       if (errorHandled) return;
-      if (errorType === mpegts.ErrorTypes.MEDIA_ERROR) {
+
+      var isMSECodecError = (
+        errorDetail === 'MediaMSEError' ||
+        (errorInfo && errorInfo.msg && (/addSourceBuffer/i.test(errorInfo.msg) || /unsupported/i.test(errorInfo.msg) || /hvc1|hevc|h265/i.test(errorInfo.msg)))
+      );
+
+      if (isMSECodecError) {
+        errorHandled = true;
+        console.warn('[mpegts] Erro de codec HEVC/H.265 não suportado no MediaSource. Disparando fallback para H.264...');
+        handlePlaybackFailure(type, true);
+        return;
+      }
+
+      if (errorType === mpegts.ErrorTypes.MEDIA_ERROR || errorType === mpegts.ErrorTypes.NETWORK_ERROR || errorType === mpegts.ErrorTypes.OTHER_ERROR) {
         errorHandled = true;
         if (transcodeSwitch.checked) {
-          handlePlaybackFailure(type);
+          handlePlaybackFailure(type, false);
         } else {
           enableTranscodeAndRetry(type);
         }
@@ -1790,58 +1832,131 @@ function escapeHtml(unsafe) {
     }, 500);
   }
 
-  // ─── H.265 / HEVC Smart Fallback ───
-  function findH264Alternative(stream) {
-    if (!stream || !stream.name || !Array.isArray(allChannels)) return null;
-    var name = stream.name;
-    var isH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(name);
-    if (!isH265) return null;
+  // ─── H.265 / HEVC Smart Fallback & Browser Codec Detection ───
+  var attemptedChannelUrls = new Set();
 
-    // Normaliza nome base removendo [H265], [HEVC], etc.
-    var cleanBaseName = name.replace(/\s*(\[|\()(H\.?265|HEVC)(\]|\))\s*/gi, '').trim().toLowerCase();
+  function browserSupportsHEVC() {
+    if (typeof MediaSource === 'undefined' || typeof MediaSource.isTypeSupported !== 'function') return false;
+    try {
+      return MediaSource.isTypeSupported('video/mp4;codecs=hvc1.1.1.L120.B0') ||
+             MediaSource.isTypeSupported('video/mp4;codecs=hev1.1.1.L120.B0');
+    } catch (e) {
+      return false;
+    }
+  }
 
-    // 1. Tentar encontrar canal com nome correspondente exato sem a tag H265
-    var exactMatch = allChannels.find(function(ch) {
-      if (ch === stream) return false;
-      var chName = (ch.name || '').trim().toLowerCase();
-      var chIsH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(chName);
-      return !chIsH265 && chName === cleanBaseName;
+  function highlightChannelInUI(stream) {
+    if (!stream || !stream.name) return;
+    document.querySelectorAll('.channel-row').forEach(function(row) {
+      if (row.textContent && row.textContent.includes(stream.name)) {
+        row.classList.add('active');
+      } else {
+        row.classList.remove('active');
+      }
     });
-    if (exactMatch) return exactMatch;
-
-    // 2. Tentar encontrar canal com prefixo ou semelhança sem H265
-    var prefixMatch = allChannels.find(function(ch) {
-      if (ch === stream) return false;
-      var chName = (ch.name || '').trim().toLowerCase();
-      var chIsH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(chName);
-      return !chIsH265 && (chName.indexOf(cleanBaseName) !== -1 || cleanBaseName.indexOf(chName) !== -1);
+    document.querySelectorAll('.vod-item').forEach(function(item) {
+      if (item.textContent && item.textContent.includes(stream.name)) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
     });
-    return prefixMatch || null;
+  }
+
+  function extractBaseChannelName(name) {
+    if (!name || typeof name !== 'string') return '';
+    return name
+      .replace(/(\[|\()(H\.?265|HEVC|4K|UHD|FHDR|FHD|FULL\s*HD|1080[PI]?|HD|720[PI]?|SD|480[PI]?|576[PI]?|ALT|ALTERNATE|BACKUP)(\]|\))/gi, '')
+      .replace(/\b(H\.?265|HEVC|4K|UHD|FHDR|FHD|FULL\s*HD|1080[PI]?|HD|720[PI]?|SD|480[PI]?|576[PI]?)\b/gi, '')
+      .replace(/[-|:_]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function findH264Alternative(stream, channels) {
+    if (!stream || !stream.name) return null;
+    var list = channels || allChannels;
+    if (!Array.isArray(list) || list.length === 0) return null;
+
+    var currentName = stream.name;
+    var currentUrl = stream.url || '';
+    var baseKey = extractBaseChannelName(currentName);
+    if (!baseKey) return null;
+
+    // Filtra candidatos que compartilham a mesma raiz base de nome
+    var candidates = list.filter(function(ch) {
+      if (!ch || !ch.name) return false;
+      if (ch === stream) return false;
+      if (currentUrl && ch.url === currentUrl) return false;
+      if (attemptedChannelUrls.has(ch.url || ch.name)) return false;
+      if (stream.type && ch.type && stream.type !== ch.type) return false;
+
+      var chBase = extractBaseChannelName(ch.name);
+      return chBase === baseKey;
+    });
+
+    if (candidates.length === 0) return null;
+
+    function isHeavyCodec(name) {
+      return /(\[|\()(H\.?265|HEVC|4K|UHD)(\]|\))/i.test(name) ||
+             /\b(H\.?265|HEVC|4K|UHD)\b/i.test(name) ||
+             /\b(FHD|FULL\s*HD|1080[PI]?|FHDR)\b/i.test(name);
+    }
+
+    // 1. Prioridade Máxima: Canais HD (720p H.264 garantido)
+    var hdMatch = candidates.find(function(ch) {
+      var n = ch.name;
+      var hasHd = /\b(HD|720[PI]?)\b/i.test(n) || /(\[|\()(HD|720[PI]?)(\]|\))/i.test(n);
+      return hasHd && !isHeavyCodec(n);
+    });
+    if (hdMatch) return hdMatch;
+
+    // 2. Segunda Prioridade: Canais SD (480p/576p H.264 garantido)
+    var sdMatch = candidates.find(function(ch) {
+      var n = ch.name;
+      var hasSd = /\b(SD|480[PI]?|576[PI]?)\b/i.test(n) || /(\[|\()(SD|480[PI]?|576[PI]?)(\]|\))/i.test(n);
+      return hasSd && !isHeavyCodec(n);
+    });
+    if (sdMatch) return sdMatch;
+
+    // 3. Terceira Prioridade: Canais sem tag pesada HEVC/4K/FHD
+    var cleanMatch = candidates.find(function(ch) {
+      return !isHeavyCodec(ch.name);
+    });
+    if (cleanMatch) return cleanMatch;
+
+    // 4. Qualquer outro canal candidato não tentado
+    return candidates[0] || null;
   }
 
   // ─── Final Failure Handler ───
-  function handlePlaybackFailure(type) {
-    console.error('All playback methods failed');
+  function handlePlaybackFailure(type, isCodecError) {
+    console.error('All playback methods failed. isCodecError:', isCodecError);
 
     // Auto-recuperação inteligente para canais com codec HEVC/H.265 não suportados no navegador
     if (activeStream && activeStream.name) {
-      var isH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(activeStream.name);
+      attemptedChannelUrls.add(activeStream.url || activeStream.name);
+      var isH265 = isCodecError ||
+                   /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(activeStream.name) ||
+                   /\bFHD\b/i.test(activeStream.name);
       if (isH265) {
         var alternative = findH264Alternative(activeStream);
         if (alternative) {
-          console.log('[Auto-Fallback] Alternando de canal H.265 para versao H.264 compatível:', alternative.name);
+          console.log('[Auto-Fallback] Alternando de canal H.265/FHD para versão H.264 compatível:', alternative.name);
           showToast(
-            'O canal "' + activeStream.name + '" utiliza H.265/HEVC (exclusivo para Smart TVs). Alternando automaticamente para "' + alternative.name + '" (H.264)...',
+            'O canal "' + activeStream.name + '" utiliza H.265/HEVC (exclusivo para Smart TVs). Alternando automaticamente para "' + alternative.name + '" (H.264 compatível)...',
             'warning',
             7000
           );
           setTimeout(function() {
+            highlightChannelInUI(alternative);
             playStream(alternative);
-          }, 800);
+          }, 600);
           return;
         } else {
           showToast(
-            'O canal "' + activeStream.name + '" requer decodificação de hardware H.265/HEVC (suportado em Smart TVs e apps como IPTV Smarters/VLC, não suportado nativamente no navegador). Utilize uma versão FHD/HD padrão.',
+            'O canal "' + activeStream.name + '" requer decodificação de hardware H.265/HEVC (suportado em Smart TVs e apps como IPTV Smarters/VLC, não suportado nativamente no navegador). Utilize uma versão HD/SD padrão.',
             'danger',
             8000
           );
@@ -2009,5 +2124,19 @@ function escapeHtml(unsafe) {
 
   // ─── Start ───
   init();
+
+  if (typeof window !== 'undefined') {
+    window.extractBaseChannelName = extractBaseChannelName;
+    window.findH264Alternative = findH264Alternative;
+    window.browserSupportsHEVC = browserSupportsHEVC;
+    window.playStream = playStream;
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      extractBaseChannelName: extractBaseChannelName,
+      findH264Alternative: findH264Alternative,
+      browserSupportsHEVC: browserSupportsHEVC
+    };
+  }
 
 })();
