@@ -1723,9 +1723,67 @@ function escapeHtml(unsafe) {
     }, 500);
   }
 
+  // ─── H.265 / HEVC Smart Fallback ───
+  function findH264Alternative(stream) {
+    if (!stream || !stream.name || !Array.isArray(allChannels)) return null;
+    var name = stream.name;
+    var isH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(name);
+    if (!isH265) return null;
+
+    // Normaliza nome base removendo [H265], [HEVC], etc.
+    var cleanBaseName = name.replace(/\s*(\[|\()(H\.?265|HEVC)(\]|\))\s*/gi, '').trim().toLowerCase();
+
+    // 1. Tentar encontrar canal com nome correspondente exato sem a tag H265
+    var exactMatch = allChannels.find(function(ch) {
+      if (ch === stream) return false;
+      var chName = (ch.name || '').trim().toLowerCase();
+      var chIsH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(chName);
+      return !chIsH265 && chName === cleanBaseName;
+    });
+    if (exactMatch) return exactMatch;
+
+    // 2. Tentar encontrar canal com prefixo ou semelhança sem H265
+    var prefixMatch = allChannels.find(function(ch) {
+      if (ch === stream) return false;
+      var chName = (ch.name || '').trim().toLowerCase();
+      var chIsH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(chName);
+      return !chIsH265 && (chName.indexOf(cleanBaseName) !== -1 || cleanBaseName.indexOf(chName) !== -1);
+    });
+    return prefixMatch || null;
+  }
+
   // ─── Final Failure Handler ───
   function handlePlaybackFailure(type) {
     console.error('All playback methods failed');
+
+    // Auto-recuperação inteligente para canais com codec HEVC/H.265 não suportados no navegador
+    if (activeStream && activeStream.name) {
+      var isH265 = /(\[|\()(H\.?265|HEVC)(\]|\))/i.test(activeStream.name);
+      if (isH265) {
+        var alternative = findH264Alternative(activeStream);
+        if (alternative) {
+          console.log('[Auto-Fallback] Alternando de canal H.265 para versao H.264 compatível:', alternative.name);
+          showToast(
+            'O canal "' + activeStream.name + '" utiliza H.265/HEVC (exclusivo para Smart TVs). Alternando automaticamente para "' + alternative.name + '" (H.264)...',
+            'warning',
+            7000
+          );
+          setTimeout(function() {
+            playStream(alternative);
+          }, 800);
+          return;
+        } else {
+          showToast(
+            'O canal "' + activeStream.name + '" requer decodificação de hardware H.265/HEVC (suportado em Smart TVs e apps como IPTV Smarters/VLC, não suportado nativamente no navegador). Utilize uma versão FHD/HD padrão.',
+            'danger',
+            8000
+          );
+          setPlayerStatus(t('error'), 'danger');
+          return;
+        }
+      }
+    }
+
     showToast(t('playbackErrorCodec') || 'Playback Error: Codec might not be supported', 'danger', 6000);
     setPlayerStatus(t('error'), 'danger');
   }
