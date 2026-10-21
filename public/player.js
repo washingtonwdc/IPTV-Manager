@@ -5,15 +5,27 @@
   document.documentElement.setAttribute('data-theme', 'light');
   try { localStorage.setItem('player_theme', 'light'); } catch (e) {}
 
-  // ─── Credentials ───
+  // ─── Credentials & Persistence ───
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const username = urlParams.get('username');
-  const password = urlParams.get('password');
+  let token = urlParams.get('token') || '';
+  let username = urlParams.get('username') || '';
+  let password = urlParams.get('password') || '';
 
-  if (!token && (!username || !password)) {
-    document.body.innerHTML = '<div class="d-flex align-items-center justify-content-center vh-100 bg-body"><div class="alert alert-warning border text-center p-4 shadow-sm" style="max-width: 480px; border-radius: 12px;"><h5 class="fw-bold mb-2">IPTV Web Player</h5><p class="mb-0 text-muted">' + (t('missingCredentials') || 'Credenciais ausentes ou token inválido. Acesse através do Painel de Controle.') + '</p></div></div>';
-    throw new Error('Missing credentials');
+  if (token) {
+    try { sessionStorage.setItem('player_token', token); } catch (e) {}
+  } else if (username && password) {
+    try {
+      sessionStorage.setItem('player_user', username);
+      sessionStorage.setItem('player_pass', password);
+    } catch (e) {}
+  } else {
+    try {
+      token = sessionStorage.getItem('player_token') || localStorage.getItem('player_token') || '';
+      if (!token) {
+        username = sessionStorage.getItem('player_user') || localStorage.getItem('player_user') || '';
+        password = sessionStorage.getItem('player_pass') || localStorage.getItem('player_pass') || '';
+      }
+    } catch (e) {}
   }
 
   // ─── State ───
@@ -121,7 +133,8 @@
   // ─── Auth Helper ───
   function getAuthParams() {
     if (token) return 'token=' + encodeURIComponent(token);
-    return 'username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
+    if (username && password) return 'username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
+    return '';
   }
 
 // ─── Utility: XSS Protection ───
@@ -572,6 +585,52 @@ function escapeHtml(unsafe) {
     }
   }
 
+  // ─── Login Card Fallback ───
+  function showLoginCard() {
+    loadingEl.style.display = 'none';
+    loadingEl.classList.add('d-none');
+    var existingOverlay = document.getElementById('player-login-overlay');
+    if (existingOverlay) return;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'player-login-overlay';
+    overlay.className = 'd-flex align-items-center justify-content-center position-fixed top-0 start-0 w-100 h-100 bg-body';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+      <div class="card shadow-sm border p-4 text-center" style="max-width: 400px; width: 90%; border-radius: 14px;">
+        <h5 class="fw-bold text-dark mb-1">IPTV Web Player</h5>
+        <p class="text-muted small mb-3">Autenticação necessária para carregar os canais</p>
+        <form id="player-login-form" class="text-start">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Usuário</label>
+            <input type="text" id="login-username" class="form-control form-control-sm" required autofocus placeholder="Usuário IPTV">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Senha</label>
+            <input type="password" id="login-password" class="form-control form-control-sm" required placeholder="Senha IPTV">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100 py-2 fw-semibold">Entrar e Carregar Conteúdo</button>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    var form = document.getElementById('player-login-form');
+    if (form) {
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        var u = document.getElementById('login-username').value.trim();
+        var p = document.getElementById('login-password').value.trim();
+        if (u && p) {
+          try {
+            sessionStorage.setItem('player_user', u);
+            sessionStorage.setItem('player_pass', p);
+          } catch (err) {}
+          window.location.search = '?username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p);
+        }
+      };
+    }
+  }
+
   // ─── Init ───
   async function init() {
     loadingEl.style.display = 'flex';
@@ -580,7 +639,13 @@ function escapeHtml(unsafe) {
     if (loadingTextSpan) loadingTextSpan.textContent = t('loadingChannels') || 'Loading Channels...';
     try {
       // 1. Fetch Channels
-      var res = await fetch('/api/player/channels.json?' + getAuthParams());
+      var authQuery = getAuthParams();
+      var channelsUrl = authQuery ? ('/api/player/channels.json?' + authQuery) : '/api/player/channels.json';
+      var res = await fetch(channelsUrl);
+      if (res.status === 401 || res.status === 403) {
+        showLoginCard();
+        return;
+      }
       if (!res.ok) throw new Error(t('channelsFetchError') + ': ' + res.status);
       allChannels = await res.json();
       var maxCatchupDays = 0;
@@ -625,7 +690,9 @@ function escapeHtml(unsafe) {
     var start = timelineStart - 3600;
     var end = timelineStart + (TIMELINE_HOURS * 3600) + 3600;
     try {
-      var epgRes = await fetch('/api/epg/schedule?start=' + start + '&end=' + end + '&' + getAuthParams());
+      var authQuery = getAuthParams();
+      var epgUrl = '/api/epg/schedule?start=' + start + '&end=' + end + (authQuery ? ('&' + authQuery) : '');
+      var epgRes = await fetch(epgUrl);
       if (!epgRes.ok) throw new Error('EPG Fetch Error: ' + epgRes.status);
       epgSchedule = await epgRes.json();
       console.log('EPG loaded: ' + Object.keys(epgSchedule).length + ' channels with data');
@@ -1807,7 +1874,9 @@ function escapeHtml(unsafe) {
     var start = timelineStart - 3600;
     var end = timelineStart + (TIMELINE_HOURS * 3600) + 3600;
     try {
-      var epgRes = await fetch('/api/epg/schedule?start=' + start + '&end=' + end + '&' + getAuthParams());
+      var authQuery = getAuthParams();
+      var epgUrl = '/api/epg/schedule?start=' + start + '&end=' + end + (authQuery ? ('&' + authQuery) : '');
+      var epgRes = await fetch(epgUrl);
       if (epgRes.ok) {
         var newData = await epgRes.json();
         // Merge with existing data
