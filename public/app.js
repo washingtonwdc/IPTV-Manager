@@ -3784,7 +3784,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'action-hosted-decompile': triggerDecompilePlaylists,
         'action-leads-refresh': loadLeads,
         'action-gold-generate': triggerGoldGeneration,
-        'action-full-flow-run': triggerFullFlowPipeline
+        'action-full-flow-run': triggerFullFlowPipeline,
+        'action-retry-webplayer': () => loadIntegratedWebPlayer(true)
     };
 
     const actionBtn = e.target.closest('[data-action]');
@@ -4081,7 +4082,7 @@ async function loadIntegratedWebPlayer(forceReload = false) {
           <i class="bi bi-exclamation-triangle-fill fs-3 d-block mb-2 text-danger"></i>
           <strong>Falha ao carregar Web Player:</strong> ${escapeHtml(err.message)}
           <div class="mt-3">
-            <button class="btn btn-sm btn-outline-primary" onclick="loadIntegratedWebPlayer(true)">Tentar Novamente</button>
+            <button class="btn btn-sm btn-outline-primary" data-action="action-retry-webplayer">Tentar Novamente</button>
           </div>
         </div>
       `;
@@ -5503,7 +5504,9 @@ async function handleLogout() {
   }
 
   // Hide the main UI when logging out
-  setMainUIVisible(false);
+  if (typeof setMainUIVisible === 'function') {
+    setMainUIVisible(false);
+  }
   
   showLoginModal();
 }
