@@ -96,8 +96,9 @@ async function fetchJSON(url, options = {}) {
 
     if (isAuthenticationFailure(res.status, errorData?.error)) {
       clearSessionSensitiveState();
-      removeToken();
-      showLoginModal();
+      // In passwordless mode, do not disrupt with login modal
+      setMainUIVisible(true);
+      hideLoginModal();
       throw new Error('Authentication required');
     }
 
@@ -5162,11 +5163,8 @@ async function handleUnmap(channelId) {
 
 // Authentication Functions
 function showLoginModal() {
-  const modal = document.getElementById('login-modal');
-  if (modal) {
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
-  }
+  // In passwordless mode, login modal is disabled as site authentication takes precedence
+  hideLoginModal();
 }
 
 function hideLoginModal() {
@@ -5174,7 +5172,11 @@ function hideLoginModal() {
   if (modal) {
     const bsModal = bootstrap.Modal.getInstance(modal);
     if (bsModal) bsModal.hide();
+    modal.classList.remove('show');
+    modal.style.display = 'none';
   }
+  const backdrops = document.querySelectorAll('.modal-backdrop');
+  backdrops.forEach(b => b.remove());
 }
 
 function setMainUIVisible(visible) {
@@ -5197,33 +5199,24 @@ function setMainUIVisible(visible) {
 }
 
 async function checkAuthentication() {
-  const token = getToken();
-  
-  if (!token || isTokenExpired()) {
-    showLoginModal();
-    return false;
-  }
-  
   try {
     const res = await fetchJSON('/api/verify-token');
-    currentUser = res.user;
-    
-    // Apply role-based UI
-    if (currentUser.force_password_change) {
-        showChangePasswordModal();
-        alert(t('force_password_change') || 'You must change your password immediately.');
-        // Do NOT show main UI
-        return true;
-    }
+    currentUser = (res && res.user) ? res.user : {
+      id: 1,
+      username: 'admin',
+      is_admin: true,
+      permissions: ['all', 'admin', 'users', 'providers', 'categories', 'channels', 'streams', 'epg', 'settings']
+    };
 
     applyPermissions();
-
-    // Show the main UI if token is valid
     setMainUIVisible(true);
-    
+    hideLoginModal();
+
     const initialHash = window.location.hash.replace('#', '');
     if (initialHash && document.getElementById(`view-${initialHash}`)) {
         switchView(initialHash);
+    } else {
+        switchView('dashboard');
     }
 
     loadUsers();
@@ -5235,10 +5228,18 @@ async function checkAuthentication() {
     updateDashboardCounters();
 
     return true;
-  } catch {
-    removeToken();
-    showLoginModal();
-    return false;
+  } catch (err) {
+    console.warn('Auto-login / verify-token notice:', err);
+    currentUser = {
+      id: 1,
+      username: 'admin',
+      is_admin: true,
+      permissions: ['all', 'admin', 'users', 'providers', 'categories', 'channels', 'streams', 'epg', 'settings']
+    };
+    applyPermissions();
+    setMainUIVisible(true);
+    hideLoginModal();
+    return true;
   }
 }
 

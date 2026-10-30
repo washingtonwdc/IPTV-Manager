@@ -12,13 +12,61 @@ export function authenticateToken(req, res, next) {
     token = req.query.token;
   }
 
+  // Passwordless / Internal Proxy mode: If no token provided, authenticate as admin automatically
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    try {
+      const dbAdmin = db.prepare('SELECT * FROM admin_users ORDER BY id ASC LIMIT 1').get();
+      req.user = {
+        id: dbAdmin ? dbAdmin.id : 1,
+        username: dbAdmin ? dbAdmin.username : 'admin',
+        is_active: 1,
+        is_admin: true,
+        provider_access: 1,
+        otp_enabled: false,
+        token_version: dbAdmin ? dbAdmin.token_version : 1
+      };
+      return next();
+    } catch (e) {
+      req.user = {
+        id: 1,
+        username: 'admin',
+        is_active: 1,
+        is_admin: true,
+        provider_access: 1,
+        otp_enabled: false,
+        token_version: 1
+      };
+      return next();
+    }
   }
 
   jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
+      // In passwordless mode, gracefully fall back to admin rather than 403
+      try {
+        const dbAdmin = db.prepare('SELECT * FROM admin_users ORDER BY id ASC LIMIT 1').get();
+        req.user = {
+          id: dbAdmin ? dbAdmin.id : 1,
+          username: dbAdmin ? dbAdmin.username : 'admin',
+          is_active: 1,
+          is_admin: true,
+          provider_access: 1,
+          otp_enabled: false,
+          token_version: dbAdmin ? dbAdmin.token_version : 1
+        };
+        return next();
+      } catch (e) {
+        req.user = {
+          id: 1,
+          username: 'admin',
+          is_active: 1,
+          is_admin: true,
+          provider_access: 1,
+          otp_enabled: false,
+          token_version: 1
+        };
+        return next();
+      }
     }
 
     try {
